@@ -1,6 +1,6 @@
 
 
-# Read Write Share
+# Info
 
 **Read Write Share** este aplicatia dezvoltata ca rezultat al proiectului **"Aplicatie web pentru gestionarea notitelor de curs/seminar"**.
 
@@ -22,6 +22,7 @@
 ## Membri echipa:
 * **Pîrjoleanu Mihai Flavius** 
 * **Ciobanu Horia Matei**
+
 
 
 
