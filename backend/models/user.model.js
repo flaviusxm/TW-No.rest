@@ -1,0 +1,44 @@
+module.exports=(sequelize,DataTypes)=>{
+const User=sequelize.define('User',{
+    user_id:{
+        type:DataTypes.INTEGER,
+        primaryKey:true,
+        autoIncrement:true}
+        ,
+    google_id:
+        {
+            type:DataTypes.STRING(255),
+            unique:true,
+            allowNull:false
+        },
+    email:{
+        type:DataTypes.STRING(150),
+        unique:true,
+        allowNull:false,
+        validate:{
+            isEmail:true
+        }
+    },
+    name:{
+        type:DataTypes.STRING(100),
+        allowNull:false
+    },
+    picture_url:{
+        type:DataTypes.STRING(255),
+        allowNull:true
+    },
+    created_at:{
+        type:DataTypes.DATE,
+        defaultValue:DataTypes.NOW
+    },
+    last_login:{
+       type:DataTypes.DATE,
+       allowNull:true
+    }
+},{
+    tableName:'Users',
+    timestamps:false,
+    underscored:true
+})
+return User;
+}

@@ -1,0 +1,55 @@
+module.exports=(sequalize,DataTypes)=>
+{
+    const Note=sequalize.define('Note',{
+        note_id:{
+            type:DataTypes.INTEGER,
+            primaryKey:true,
+            autoIncrement:true
+        },
+        user_id:{
+            type:DataTypes.INTEGER,
+            allowNull:false,
+            references:{
+                model:'Users',
+                key:'user_id'
+            }
+        },
+        subject_id:{
+            type:DataTypes.INTEGER,
+            allowNull:false,
+            references:{
+                model:'Subjects',
+                key:'subject_id'
+            }
+        },
+        title:{
+            type:DataTypes.STRING(200),
+            allowNull:false
+        },
+        markdown_content:{
+            type:DataTypes.TEXT,
+            allowNull:false
+        },
+        course_date:{
+                type:DataTypes.DATEONLY,allowNull:false
+        },
+        created_at:{
+            type:DataTypes.DATE,
+            defaultValue:DataTypes.NOW
+        },
+        updated_at:{
+            type:DataTypes.DATE,
+            defaultValue:DataTypes.NOW
+        }
+    },{
+        tableName:'Notes',
+        timestamps:false,
+        underscored:true,
+        hooks:{
+            beforeUpdate:(note)=>{
+                note.updated_at=new Date();
+            }
+        }
+    })
+    return Note;
+}
