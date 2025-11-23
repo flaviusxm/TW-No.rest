@@ -1,70 +1,123 @@
-# Getting Started with Create React App
+# Read Write Share
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+**Read Write Share** este aplicatia dezvoltata ca rezultat al proiectului **"Aplicatie web pentru gestionarea notitelor de curs/seminar"**.
 
-## Available Scripts
+## Tehnologii si unelte folosite
 
-In the project directory, you can run:
+- **Front-end:** React, TailwindCSS  
+- **Back-end:** Node.js, Express.js  
+- **Baza de date:** MariaDB  
+- **Unelte:** DBeaver, Postman  
 
-### `npm start`
+## Nume echipa
+- **No.rest**
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Membri echipa
+- **Pirjoleanu Mihai Flavius**
+- **Ciobanu Horia Matei**
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Functionalitati Principale
 
-### `npm test`
+### 1. Autentificare
+- Autentificare securizata cu Google OAuth
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 2. Gestiune Notite
+- Creare, editare si stergere notite
 
-### `npm run build`
+### 3. Organizare
+- Categorizare notite pe materii  
+- Filtrare si sortare notite
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 4. Partajare
+- Partajare individuala cu alti utilizatori  
+- Creare si gestionare grupuri de studiu
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 5. Fisiere Atașate
+- Incarcare multiple tipuri de fisiere  
+- Gestiune storage si organizare fisiere
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 6. Gamificare
+- Sistem de badge-uri si realizari  
+- Progres utilizator
 
-### `npm run eject`
+---
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Necesare
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- **Git** 
+- **Node.js**  
+- **MariaDB** 
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Pasi de Rulare
 
-## Learn More
+### 1. Cloneaza Repository-ul
+```bash
+git clone <url-repository>
+cd TW-NO.REST
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### 2. Creeaza Baza de Date
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+**Optiunea 1: CLI **
+```bash
+# Deschide terminal si conecteaza-te la MariaDB:
+mysql -u root -p
 
-### Code Splitting
+# ruleaza:
+CREATE DATABASE Read_White_Share;
+EXIT;
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+**Optiunea 2: GUI Tool DBeaver/HeidiSQL etc**
+- Deschide DBeaver sau HeidiSQL
+- Conecteaza-te la MariaDB (localhost, port 3306)
+- Click dreapta pe Databases
+- Create new database
+- Nume: `<>`
 
-### Analyzing the Bundle Size
+### 3. Configureaza Dependintele
+```bash
+# Backend
+cd backend
+npm install
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+# Frontend
+cd ../frontend  
+npm install
+```
 
-### Making a Progressive Web App
+### 4. Configureaza Fisierul .env
+In folderul `backend/`, creeaza fisierul `.env` cu urmatorul continut:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+```env
+# Configurare Baza de Date
+DB_HOST=                             // host de la baza de date
+DB_PORT=                             // port de la baza de date  
+DB_USER=                             // nume user baza de date
+DB_PASS=                             // parola baza de date
+DB_NAME=                             // numele bazei de date
 
-### Advanced Configuration
+# Configurare Aplicatie
+PORT=                                // port backend
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+# Configurare Google OAuth
+GOOGLE_CL_ID=                        // google id => from google console
+GOOGLE_CL_SECRET=                    // google secret key => from google console
 
-### Deployment
+# Configurare Timezone
+TZ=Europe/Bucharest                  // timezone aplicatie
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+```
 
-### `npm run build` fails to minify
+### 5. Porneste Aplicatia
+```bash
+# Terminal 1 - Backend
+cd backend
+npm start
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+# Terminal 2 - Frontend
+cd frontend
+npm start
+```
+
