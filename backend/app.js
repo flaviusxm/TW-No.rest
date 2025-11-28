@@ -5,6 +5,7 @@ const USER=database.users;
 const session=require('express-session')
 const passport=require('passport');
 const { require_auth } = require("./middleware/auth");
+const subject_routes=require('./routes/subjects')
 require("dotenv").config();
 
 //
@@ -37,8 +38,8 @@ database.sequelize.sync().then(()=>{
 //
 app.use('/auth',require('./routes/google_auth'))
 app.use('/item-finder',require_auth,require('./routes/advanced_search'))
-app.use('/subjects', require_auth, require('./routes/subjects'));
 app.use('/tags', require_auth, require('./routes/tags'));
+app.use('/subjects',require_auth,subject_routes)
 const port = process.env.PORT || 9583
 app.listen(port, () => {console.log(`Server runs on  ${port}`);});
 

@@ -1,10 +1,10 @@
 const express = require('express')
 const database = require('../models')
 const { Op } = require("sequelize")
-const {validate_query}=require('../middleware/validate_search_item_query')
+const {validate_search_query}=require('../middleware/validate_search_item_query')
 const router = express.Router()
 
-router.get('/global',validate_query,async (req, res) => {
+router.get('/global',validate_search_query,async (req, res) => {
   try {
     if (!req.query.q?.trim() || req.query.q.trim().length < 2) {
       return res.status(400).json({ error: 'Search query too short' })

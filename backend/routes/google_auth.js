@@ -1,5 +1,5 @@
 const express = require("express");
-const database = require("./models");
+const database = require("../models");
 const USER = database.users;
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const passport = require('passport');
