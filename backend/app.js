@@ -1,11 +1,13 @@
 const express = require("express");
 const cors = require("cors");
 const database = require("./models");
-const USER=database.users;
 const session=require('express-session')
 const passport=require('passport');
 const { require_auth } = require("./middleware/auth");
-const subject_routes=require('./routes/subjects')
+const subject_routes=require('./routes/subjects');
+const note_routes=require('./routes/notes');
+const tags_routes=require('./routes/tags');
+const google_auth_routes=require('./routes/google_auth');
 require("dotenv").config();
 
 //
@@ -36,10 +38,11 @@ database.sequelize.sync().then(()=>{
 }).catch((err)=>{console.log("Eroare ",err)})
 
 //
-app.use('/auth',require('./routes/google_auth'))
-app.use('/item-finder',require_auth,require('./routes/advanced_search'))
-app.use('/tags', require_auth, require('./routes/tags'));
+app.use('/auth',google_auth_routes)
+//app.use('/item-finder',require_auth,require('./routes/advanced_search'))
+app.use('/tags', require_auth, tags_routes);
 app.use('/subjects',require_auth,subject_routes)
+app.use('/notes',require_auth,note_routes);
 const port = process.env.PORT || 9583
 app.listen(port, () => {console.log(`Server runs on  ${port}`);});
 
