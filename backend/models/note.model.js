@@ -28,10 +28,10 @@ module.exports=(sequalize,DataTypes)=>
         },
         markdown_content:{
             type:DataTypes.TEXT,
-            allowNull:false
+            allowNull:true
         },
         course_date:{
-                type:DataTypes.DATEONLY,allowNull:false
+                type:DataTypes.DATEONLY,allowNull:true
         },
         created_at:{
             type:DataTypes.DATE,

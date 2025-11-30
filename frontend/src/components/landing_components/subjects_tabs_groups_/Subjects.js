@@ -1,0 +1,189 @@
+import React, { useState, useEffect } from 'react';
+
+export default function Subjects({ 
+  subjects, 
+  setter_subjects, 
+  selected_categories, 
+  setter_selected_categories, 
+  setter_sel, 
+  setSelectedNote,
+  setter_show_note_user 
+}) {
+
+  const [show_add_subject, setter_show_add_subject] = useState(false);
+  const [new_subject_name, setter_new_subject_name] = useState('');
+  const [is_adding, setter_is_adding] = useState(false);
+  const [is_manual_save, setter_is_manual_save] = useState(false); 
+
+  useEffect(() => {
+    if (!is_adding || is_manual_save) return; 
+    if (!new_subject_name.trim()) return;
+    
+    const timeoutId = setTimeout(() => {
+      handler_add_subject();
+    }, 1000);
+
+    return () => clearTimeout(timeoutId);
+  }, [new_subject_name, is_adding, is_manual_save]);
+
+  const handler_add_subject = async () => {
+    if (!new_subject_name.trim()) return;
+
+    try {
+      const resp = await fetch("http://localhost:5000/subjects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials:"include",
+        body: JSON.stringify({ name: new_subject_name.trim() })
+      });
+
+      if (!resp.ok) {
+        const errorData = await resp.json();
+        throw new Error(errorData.err || `Eroare HTTP: ${resp.status}`);
+      }
+
+      const created_subject = await resp.json();
+      console.log('Subiect creat:', created_subject);
+      const normalized = { ...created_subject, id: created_subject.id ?? created_subject.subject_id };
+      
+  
+      setter_subjects(prev => Array.isArray(prev) ? [...prev, normalized] : [normalized]);
+    
+      setter_new_subject_name('');
+      setter_show_add_subject(false);
+      setter_is_adding(false);
+      setter_is_manual_save(false);
+    } catch (err) {
+      console.error("Eroare adaugare subiect:", err);
+      setter_is_manual_save(false); 
+    }
+  };
+
+  const handler_save_now = () => {
+    setter_is_manual_save(true); 
+    handler_add_subject();
+  };
+
+  const handler_clicked_subject = (subject) => {
+    setter_selected_categories(subject);
+  };
+
+  const handler_delete_subject = async (subjectId, e) => {
+    e.stopPropagation();
+    
+    try {
+      const resp = await fetch(`http://localhost:5000/subjects/${subjectId}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers:{
+          "Content-Type":"application/json"
+        }
+      });
+
+      if (!resp.ok) {
+        throw new Error('Eroare la stergerea subiectului');
+      }
+const updated_subjects = (subjects || []).filter(subject => {
+        const sid = subject.id ?? subject.subject_id;
+        return sid !== subjectId;
+      });
+      
+      setter_subjects(updated_subjects);
+      
+      const selected_id = selected_categories?.id ?? selected_categories?.subject_id;
+      if (selected_id === subjectId) {
+        setter_selected_categories(null);
+      }
+    } catch (err) {
+      console.error("Eroare stergere subiect:", err);
+    }
+  };
+
+  const handler_start_adding_subject = () => {
+    setter_show_add_subject(true);
+    setter_is_adding(true);
+    setter_is_manual_save(false); 
+    setter_new_subject_name('');
+  };
+
+  const handler_cancel_add_subject = () => {
+    setter_show_add_subject(false);
+    setter_is_adding(false);
+    setter_is_manual_save(false); 
+    setter_new_subject_name('');
+  };
+
+  return (
+    <div className="mb-6">
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="font-bold text-[#4E8DC4]">Subjects</h3>
+        <button 
+          onClick={handler_start_adding_subject} 
+          className="text-[#4E8DC4] hover:text-[#3b78a2] transition-colors" 
+          title="Add new subject"
+          disabled={show_add_subject}
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      </div>
+
+      {show_add_subject && (
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg border">
+          <input 
+            type="text" 
+            value={new_subject_name} 
+            onChange={(e) => setter_new_subject_name(e.target.value)}
+            placeholder="Enter subject name... (auto-saves after 1s or click Save Now)"
+            className="w-full px-3 py-2 border rounded mb-2 focus:outline-none focus:ring-2 focus:ring-[#4E8DC4]"
+            autoFocus 
+          />
+          <div className="flex gap-2">
+            <button 
+              onClick={handler_save_now} 
+              className="flex-1 bg-[#4E8DC4] text-white py-1 px-3 rounded hover:bg-[#3b78a2] transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!new_subject_name.trim()}
+            >
+              Save Now
+            </button>
+            <button 
+              onClick={handler_cancel_add_subject}
+              className="flex-1 bg-gray-300 text-gray-700 py-1 px-3 rounded hover:bg-gray-400 transition-colors text-sm"
+            >
+              Cancel
+            </button>
+          </div>
+          {new_subject_name.trim() && !is_manual_save && ( 
+            <p className="text-xs text-gray-500 mt-2">Subject will be saved automatically...</p>
+          )}
+        </div>
+      )}
+
+      <ul className="space-y-1">
+        {subjects.length === 0 ? (
+          <li className="text-gray-500 text-sm py-2 text-center">No subjects yet</li>
+        ) : (
+          subjects.map((subject) => {
+            const sid = subject.id ?? subject.subject_id;
+            return (
+              <li
+                key={sid}
+                className={`cursor-pointer px-3 py-2 rounded hover:bg-[#E3F0FF] transition-colors group flex justify-between items-center ${
+                  (selected_categories?.id ?? selected_categories?.subject_id) === sid ? 'bg-[#4E8DC4] text-white' : ''
+                }`}
+                onClick={() => handler_clicked_subject({ ...subject, id: sid })}
+              >
+                <span className="flex-1 truncate">{subject.name}</span>
+                <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full">
+                  {subject.notes?.length || 0}
+                </span>
+               
+              </li>
+            );
+          })
+        )}
+      </ul>
+    </div>
+  );
+}
