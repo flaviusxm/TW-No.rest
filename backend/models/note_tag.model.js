@@ -5,7 +5,7 @@ module.exports=(sequelize,DataTypes)=>{
             type:DataTypes.INTEGER,
             primaryKey:true,
             references:{
-                model:'notes',
+                model:'Notes',
                 key:'note_id'
             }
         },
