@@ -1,7 +1,7 @@
 import rws_app_logo from './assets/rws_logo.png';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-
+import {useNavigate} from 'react-router-dom';
 import Landing from './components/Landing';
 
 function App() {
@@ -11,7 +11,7 @@ function App() {
   const [selected_categories, setter_selected_categories] = useState(null);
   const [selected_note, setter_selected_note] = useState(null);
   const [show_note_user, setter_show_note_user] = useState(false);
-  
+  const navigate=useNavigate();
   // check user status
   useEffect(() => {
     const checkAuthStatus = async () => {
@@ -25,9 +25,10 @@ function App() {
           console.log('auth/status data =', data);
           if (data?.user) {
             setUser(data.user);
+            navigate('/landing');
           } else if (data) {
-            
             setUser(data);
+            navigate('/landing');
           }
         }
       } catch (err) {
@@ -37,7 +38,7 @@ function App() {
       }
     };
     checkAuthStatus();
-  }, []);
+  }, [navigate]);
 
   const handleGoogleLogin = () => {
     window.location.href = "http://localhost:5000/auth/google";

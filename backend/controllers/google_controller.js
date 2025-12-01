@@ -48,7 +48,7 @@ exports.get_auth_status=(req,resp)=>{
     else{resp.status(400).json({err:'Nu este autentificat'})}
 }
 exports.google_auth_success=(req,resp)=>{
-    resp.redirect('http://localhost:3000/')
+    resp.redirect('http://localhost:3000/landing')
 }
 exports.logout=(req,resp)=>{
     req.logOut((err)=>{
