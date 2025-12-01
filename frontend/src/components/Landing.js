@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import rws_app_logo from '../assets/rws_logo.png';
 import SubjectsTagsGroupsBar from './landing_components/SubjectsTagsGroupsBar';
 import ContentBar from './landing_components/ContentBar';
-import DetailsBar from './landing_components/DetailsBar';
+
 
 const getInitial = (name) => {
   if (!name) return 'U';
@@ -174,7 +174,7 @@ const navigate=useNavigate();
           />
         </div>
 
-        <div className="basis-[60%] max-w-[60%] p-4 overflow-auto bg-white hover:bg-gradient-to-t hover:from-blue-50 hover:via-blue-25 hover:to-white transition-all duration-2000 ease-in-out">
+        <div className="basis-[80%] max-w-[80%] p-4 overflow-auto bg-white hover:bg-gradient-to-t hover:from-blue-50 hover:via-blue-25 hover:to-white transition-all duration-2000 ease-in-out">
           <ContentBar 
             selected_category={selected_categories}
             setter_selected_note={setter_selected_note}
@@ -183,9 +183,7 @@ const navigate=useNavigate();
           />
         </div>
 
-        <div className="basis-[20%] max-w-[20%] border-l p-4 overflow-auto bg-white hover:bg-gradient-to-t hover:from-blue-50 hover:via-blue-25 hover:to-white transition-all duration-2000 ease-in-out">
-          <DetailsBar selected_note={selected_note} />
-        </div>
+      
       </div>
 
       <style>
