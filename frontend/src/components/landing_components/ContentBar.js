@@ -1,145 +1,242 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 export default function ContentBar({selected_category,setter_selected_note,setter_subjects,setter_selected_categories}) {
   
-    const [notes, setter_notes] = useState([]);
+  const [notes, setter_notes] = useState([]);
   const [loading, setter_loading] = useState(false);
   const [creating_note, setter_creating_note] = useState(false);
-  const [editing_new_note, setter_editing_new_note] = useState(false);
-  const [new_note_data, setter_new_note_data] = useState({
-    id: Math.random()*10000,
-    title: 'New Note',
-    markdown_content: '',
-    description: '',
-    course_date: new Date().toISOString().split('T')[0]
-  });
+  const [current_note, setCurrentNote] = useState(null);
+  const [deletingNoteId, setDeletingNoteId] = useState(null);
+
+  const saveTimer = useRef(null);
+
+  const subjectId = useMemo(() => selected_category?.id ?? selected_category?.subject_id, [selected_category]);
+  
   useEffect(()=>{
     const fetch_notes=async ()=>{
-    if(!selected_category){setter_notes([]);return;}
-    setter_loading(true);
+      if(!selected_category){console.warn('Nu este selectat niciun subiect — nu pot incarca notele.'); setter_notes([]);return;}
+      setter_loading(true);
 
-    try{
-      const subject_id=selected_category.id ?? selected_category.subject_id;
-      const resp=await fetch(`http://localhost:5000/subjects/${subject_id}`,{credentials:"include"});
-      if(resp.ok){const data=await resp.json();setter_notes(data)}else{setter_notes([])}
-    }catch(err){
-      console.error("Eroare incarcare materii",err);setter_notes([]);
-    }finally{ setter_loading(false)}
-  }
-  fetch_notes();
-  },[selected_category])
-  const handler_note_click = (note) => {
-    setter_new_note_data({  
-      id: note.id ?? note.note_id,
-      title: note.title,
-      description:note.description||'',
-      markdown_content: note.markdown_content || '',
-      course_date: note.course_date || new Date().toISOString().split('T')[0]
-    });
-    setter_editing_new_note(true);  
-};
-  const handler_delete_subject=async(e)=>{
-    e.stopPropagation();
-    if(!window.confirm(`Are you sure you want to delete this subject, indeed all notes "${selected_category.name}" ?'`)){return;}
-  try{
-    const subject_id=selected_category.id?? selected_category.subject_id;
-    const resp=await fetch(`http://localhost:5000/subjects/${subject_id}`,{
-      method:"DELETE",
-      credentials:"include",
-      headers:{
-        "Content-type":"application/json"
+      try{
+        const subject_id=selected_category.id ?? selected_category.subject_id;
+        if(!subject_id){
+          console.error('Subject invalid: lipseste id-ul subiectului.');
+          setter_notes([]);
+          return;
+        }
+        const resp=await fetch(`http://localhost:5019/subjects/${subject_id}`,{credentials:"include"});
+        if(resp.ok){
+          const data=await resp.json();
+          console.log('Notes fetched:', data);
+          setter_notes(Array.isArray(data) ? data : []);
+        } else {
+          console.error(`Eroare la fetch notes, status: ${resp.status}`);
+          setter_notes([]);
+        }
+      }catch(err){
+        console.error("Eroare incarcare note:", err); 
+        setter_notes([]);
+      }finally{ 
+        setter_loading(false);
       }
-    });
-    if(!resp.ok){console.error("Eroare la stergerea subiectului !");}
-    setter_subjects(prev=>prev.filter(subject=>{
-      const sub_id=subject_id??subject.subject_id;
-      return sub_id!==subject_id;
-    }))
-    setter_selected_categories(null);
-    setter_selected_note(null);
-  }catch(err){
-    console.error("Eroare la stergerea subiectului",err);
-  }
-  }
-  const handler_create_note = async () => {
-    if (!selected_category) {
-      console.error('No subject selected!');
+    }
+    fetch_notes();
+  },[selected_category])
+
+  const handler_note_click = async (note) => {
+    console.log('Note clicked:', note); 
+    try {
+      const id = note.id ?? note.note_id;
+      console.log('Fetching note details for ID:', id); 
+      
+      const resp = await fetch(`http://localhost:5019/notes/${id}`, {
+        credentials: "include",
+      });
+
+      console.log('Response status:', resp.status); 
+
+      if (!resp.ok) {
+        console.log('Failed to fetch note details');
+        return;
+      }
+
+      const selected_note = await resp.json();
+      console.log('Note details received:', selected_note); 
+
+      const withSubject = {
+        ...selected_note,
+        subject_id: selected_note.subject_id ?? subjectId,
+        subject_name: selected_note.subject_name ?? selected_category?.name,
+        subject: selected_category ?? selected_note.subject,
+      };
+
+      console.log('Final note object:', withSubject);
+      
+      setCurrentNote(withSubject);
+      setter_selected_note(withSubject);
+    } catch (err) {
+      console.error("Error loading note details:", err);
+    }
+  };
+
+  
+  const handler_delete_note = async (noteId, e) => {
+    e.stopPropagation(); 
+    setDeletingNoteId(noteId);
+    
+    if(!window.confirm('Are you sure you want to delete this note?')) {
+      setDeletingNoteId(null);
       return;
     }
+    
+    try {
+      const resp = await fetch(`http://localhost:5019/notes/${noteId}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          "Content-type": "application/json"
+        }
+      });
+      
+      if (!resp.ok) {
+        console.error("Eroare la stergerea notitei!");
+        return;
+      }
+      
+  
+      setter_notes(prev => prev.filter(note => {
+        const nid = note.id ?? note.note_id;
+        return nid !== noteId;
+      }));
+      
 
-    setter_creating_note(true);
+      if (current_note && (current_note.id === noteId || current_note.note_id === noteId)) {
+        setCurrentNote(null);
+        setter_selected_note(null);
+      }
+      
+    } catch (err) {
+      console.error("Eroare la stergerea notitei", err);
+    } finally {
+      setDeletingNoteId(null);
+    }
+  };
+
+  const handler_delete_subject = async (e) => {
+    e.stopPropagation();
+    if(!window.confirm(`Are you sure you want to delete this subject and all its notes "${selected_category.name}"?`)){return;}
     
     try {
       const subject_id = selected_category.id ?? selected_category.subject_id;
-      const resp = await fetch('http://localhost:5000/notes', {
+      const resp = await fetch(`http://localhost:5019/subjects/${subject_id}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          "Content-type": "application/json"
+        }
+      });
+      
+      if(!resp.ok) {
+        console.error("Eroare la stergerea subiectului !");
+        return;
+      }
+      
+      setter_subjects(prev => prev.filter(subject => {
+        const sub_id = subject.id ?? subject.subject_id;
+        return sub_id !== subject_id;
+      }));
+      
+      setter_selected_categories(null);
+      setter_selected_note(null);
+      setCurrentNote(null);
+      setter_notes([]);
+      
+    } catch (err) {
+      console.error("Eroare la stergerea subiectului", err);
+    }
+  }
+
+  const handler_create_note = async () => {
+    if (!selected_category) { console.error('Nu poti crea o nota fara un subiect selectat.'); return; }
+    if (!subjectId) { console.error('Nu exista subjectId pentru nota noua. Selecteaza un subiect valid.'); return; }
+    setter_creating_note(true);
+    try {
+      const resp = await fetch('http://localhost:5019/notes', {
         method: 'POST',
         credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: 'New Note',
-          subject_id: subject_id,
+          subject_id: subjectId,
+          description: '',
+          markdown_content: '',
         })
       });
-
-      if (resp.ok) {
-        const new_note = await resp.json();
-         setter_new_note_data({
-          id: new_note.id,
-          title: new_note.title,
-          description:new_note.description||'',
-          markdown_content: new_note.markdown_content || '',
-          course_date: new_note.course_date || new Date().toISOString().split('T')[0]
-        });
-         setter_editing_new_note(true);
-        setter_notes(prev => [new_note, ...prev]);
-      } else {
-        console.error('Failed to create note');
-      }
+      
+      if (!resp.ok) { console.error(`Eroare creare nota, status: ${resp.status}`); return; }
+      const new_note = await resp.json();
+      console.log('New note created:', new_note); 
+      
+      const withSubject = { 
+        ...new_note, 
+        subject_id: subjectId, 
+        subject_name: selected_category?.name,
+        subject: selected_category 
+      };
+      
+      setter_notes(prev => [withSubject, ...prev]);
+      setCurrentNote(withSubject);
+      setter_selected_note(withSubject);
     } catch (err) {
       console.error('Error creating note:', err);
     } finally {
       setter_creating_note(false);
     }
   };
-const handler_save_note=async()=>{
-  if(!new_note_data.id)return;
-  try{
-const resp=await fetch(`http://localhost:5000/notes/${new_note_data.id}`,{
-    method: 'PUT',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          title: new_note_data.title,
-          description:new_note_data.description,
-          markdown_content: new_note_data.markdown_content,
-          course_date: new_note_data.course_date
-        })
-      });
 
-      if (resp.ok) {
-        const updated_note = await resp.json();
-        setter_notes(prev => prev.map(note => (note.id ?? note.note_id) === new_note_data.id ? updated_note : note));
-        setter_editing_new_note(false);
-        setter_selected_note(updated_note);
+  useEffect(() => {
+    if (!current_note?.id) return;
+    
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    
+    saveTimer.current = setTimeout(async () => {
+      try {
+        const resp = await fetch(`http://localhost:5019/notes/${current_note.id}`, {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: current_note.title,
+            description: current_note.description || '',
+            content: current_note.markdown_content,
+            course_date: current_note.course_date,
+            subject_id: current_note.subject_id ?? subjectId,
+          })
+        });
+        
+        if (!resp.ok) { console.error(`Eroare la autosave, status: ${resp.status}`); return; }
+        const updated = await resp.json();
+        const merged = { 
+          ...updated, 
+          subject_id: updated.subject_id ?? subjectId, 
+          subject_name: current_note.subject_name ?? selected_category?.name,
+          subject: current_note.subject ?? selected_category 
+        };
+        
+        setCurrentNote(merged);
+        setter_selected_note(merged);
+        setter_notes(prev => prev.map(n => (n.id ?? n.note_id) === merged.id ? merged : n));
+      } catch (e) {
+        console.error('Autosave error', e);
       }
-    }
-  catch(err){console.error("Eroare salvare notita",err)}
-}
-const handler_cancel_edit = () => {
-    setter_editing_new_note(false);
-    setter_new_note_data({
-      id: Math.random()*10000,
-      title: 'New Note',
-      description:'',
-      markdown_content: '',
-      course_date: new Date().toISOString().split('T')[0]
-    });
-  };
-if (!selected_category) {
+    }, 800);
+    
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+  }, [current_note?.title, current_note?.description, current_note?.markdown_content, current_note?.course_date]);
+
+  if (!selected_category) {
     return (
       <div className="flex-1 bg-gray-50 p-6 overflow-auto">
         <div className="mb-6">
@@ -179,102 +276,76 @@ if (!selected_category) {
     );
   }
 
-  // edit mode
-  if (editing_new_note ) {
+  if (current_note) {
     return (
       <div className="flex-1 bg-gray-50 p-6 overflow-auto">
-        
-        <button
-          onClick={handler_cancel_edit}
-          className="flex items-center gap-2 text-gray-600 hover:text-[#4E8DC4] mb-4 transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          <span className="font-medium">Back to {selected_category.name}</span>
-        </button>
-
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Title
-            </label>
+        <div className="mb-4 flex justify-between items-center">
+          <button
+            onClick={() => {
+              setCurrentNote(null);          
+              setter_selected_note(null);     
+            }}
+            className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded flex items-center gap-1"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to List
+          </button>
+          
+       
+        </div>
+       
+        <div className="bg-white rounded-lg shadow-sm border p-6 space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
             <input
               type="text"
-              value={new_note_data.title}
-              onChange={(e) => setter_new_note_data(prev => ({...prev, title: e.target.value}))}
+              value={current_note.title || ''}
+              onChange={(e) => setCurrentNote(prev => ({ ...prev, title: e.target.value }))}
               className="w-full text-2xl font-bold text-gray-800 border-b-2 border-gray-200 focus:border-[#4E8DC4] outline-none pb-2"
               placeholder="Note title..."
             />
           </div>
 
-          {/* ds & date*/}
-       <div className="mb-6 flex gap-4">
+          <div className="flex gap-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
               <input
                 type="text"
-                value={new_note_data.description}
-                onChange={(e) => setter_new_note_data(prev => ({...prev, description: e.target.value}))}
+                value={current_note.description || ''}
+                onChange={(e) => setCurrentNote(prev => ({ ...prev, description: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4E8DC4]"
                 placeholder="Add a brief description..."
               />
             </div>
             <div className="w-48">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Course Date
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Course Date</label>
               <input
                 type="date"
-                value={new_note_data.course_date}
-                onChange={(e) => setter_new_note_data(prev => ({...prev, course_date: e.target.value}))}
+                value={current_note.course_date || new Date().toISOString().split('T')[0]}
+                onChange={(e) => setCurrentNote(prev => ({ ...prev, course_date: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4E8DC4]"
               />
             </div>
           </div>
 
-          {/*md*/}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Content (Markdown)
-            </label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Content (Markdown)</label>
             <textarea
-              value={new_note_data.markdown_content}
-              onChange={(e) => setter_new_note_data(prev => ({...prev, markdown_content: e.target.value}))}
+              value={current_note.markdown_content || ''}
+              onChange={(e) => setCurrentNote(prev => ({ ...prev, markdown_content: e.target.value }))}
               rows={16}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4E8DC4] font-mono text-sm"
-              placeholder="Start writing your note content here...
-
-You can use Markdown:
-# Heading
-## Subheading
-- List item
-**bold** *italic*"
+              placeholder="Start writing your note content here..."
             />
-          </div>
-
-          <div className="flex justify-end gap-3">
-            <button
-              onClick={handler_cancel_edit}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handler_save_note}
-              className="px-6 py-2 bg-[#4E8DC4] text-white rounded-lg hover:bg-[#3b78a2] transition-colors"
-            >
-              Save Note
-            </button>
           </div>
         </div>
       </div>
     );
   }
 
-// initial listv
+  // initial list view
   return (
     <div className="flex-1 bg-gray-50 p-6 overflow-auto">
       <div className="mb-6">
@@ -283,7 +354,7 @@ You can use Markdown:
           <button
             onClick={handler_delete_subject}
             className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-            title="Delete subject"
+            title="Delete subject and all notes"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -319,7 +390,7 @@ You can use Markdown:
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                New Note
+                New Note (auto-save)
               </>
             )}
           </span>
@@ -338,37 +409,73 @@ You can use Markdown:
             This subject doesn't have any notes yet. Click "New Note" to get started!
           </p>
         </div>
-      ) 
-      :
-       (
+      ) : (
         <ul className="space-y-3">
-          {notes.map((note) => (
-            <li
-              key={note.id ?? note.note_id}
-              onClick={() => handler_note_click(note)}
-              className="bg-white p-4 rounded-lg shadow-sm border hover:border-[#4E8DC4] hover:shadow-md transition-all cursor-pointer group"
-            >
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-semibold text-gray-800 group-hover:text-[#4E8DC4] transition-colors">
-                  {note.title || 'Untitled Note'}
-                </h3>
-              </div>
-              
-              {note.content && (
-                <p className="text-sm text-gray-600 line-clamp-2">
-                  {note.content}
-                </p>
-              )}
-              
-              <div className="flex gap-2 mt-3">
-                {note.tags && note.tags.length > 0 && note.tags.map((tag, idx) => (
-                  <span key={idx} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                    {tag.name}
-                  </span>
-                ))}
-              </div>
-            </li>
-          ))}
+          {notes.map((note) => {
+            const noteId = note.id ?? note.note_id;
+            const isDeleting = deletingNoteId === noteId;
+            
+            return (
+              <li
+                key={noteId}
+                onClick={() => !isDeleting && handler_note_click(note)}
+                className="bg-white p-4 rounded-lg shadow-sm border hover:border-[#4E8DC4] hover:shadow-md transition-all cursor-pointer group relative"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-800 group-hover:text-[#4E8DC4] transition-colors">
+                      {note.title || 'Untitled Note'}
+                    </h3>
+                    {note.description && (
+                      <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                        {note.description}
+                      </p>
+                    )}
+                  </div>
+            
+                  <button
+                    onClick={(e) => handler_delete_note(noteId, e)}
+                    disabled={isDeleting}
+                    className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors ml-2"
+                    title="Delete note"
+                  >
+                    {isDeleting ? (
+                      <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                
+                {note.content && (
+                  <p className="text-sm text-gray-600 line-clamp-2 mt-2">
+                    {note.content}
+                  </p>
+                )}
+                
+                <div className="flex justify-between items-center mt-3 pt-2 border-t border-gray-100">
+                  <div className="text-xs text-gray-500">
+                    {note.course_date && (
+                      <span className="flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        {note.course_date}
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="text-xs text-gray-500">
+                    {note.updated_at && (
+                      <span>Updated: {new Date(note.updated_at).toLocaleDateString()}</span>
+                    )}
+                  </div>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

@@ -9,11 +9,42 @@ export default function Subjects({
   setSelectedNote,
   setter_show_note_user 
 }) {
-
   const [show_add_subject, setter_show_add_subject] = useState(false);
   const [new_subject_name, setter_new_subject_name] = useState('');
   const [is_adding, setter_is_adding] = useState(false);
-  const [is_manual_save, setter_is_manual_save] = useState(false); 
+  const [is_manual_save, setter_is_manual_save] = useState(false);
+  const [subjectCounts, setSubjectCounts] = useState({});
+
+  useEffect(() => {
+    const fetchSubjectCounts = async () => {
+      if (!subjects || subjects.length === 0) return;
+      
+      const counts = {};
+      
+      await Promise.all(
+        subjects.map(async (subject) => {
+          const sid = subject.id ?? subject.subject_id;
+          try {
+            const resp = await fetch(`http://localhost:5019/subjects/${sid}/count`, {
+              credentials: "include",
+            });
+            
+            if (resp.ok) {
+              const data = await resp.json();
+              counts[sid] = data.notes_count;
+            }
+          } catch (err) {
+            console.error(`Error fetching count for subject ${sid}:`, err);
+            counts[sid] = 0;
+          }
+        })
+      );
+      
+      setSubjectCounts(counts);
+    };
+    
+    fetchSubjectCounts();
+  }, [subjects]);
 
   useEffect(() => {
     if (!is_adding || is_manual_save) return; 
@@ -30,7 +61,7 @@ export default function Subjects({
     if (!new_subject_name.trim()) return;
 
     try {
-      const resp = await fetch("http://localhost:5000/subjects", {
+      const resp = await fetch("http://localhost:5019/subjects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials:"include",
@@ -44,10 +75,12 @@ export default function Subjects({
 
       const created_subject = await resp.json();
       console.log('Subiect creat:', created_subject);
-      const normalized = { ...created_subject, id: created_subject.id ?? created_subject.subject_id };
       
-  
-      setter_subjects(prev => Array.isArray(prev) ? [...prev, normalized] : [normalized]);
+      setter_subjects(prev => Array.isArray(prev) ? [...prev, created_subject] : [created_subject]);
+      setSubjectCounts(prev => ({
+        ...prev,
+        [created_subject.id]: 0
+      }));
     
       setter_new_subject_name('');
       setter_show_add_subject(false);
@@ -72,7 +105,7 @@ export default function Subjects({
     e.stopPropagation();
     
     try {
-      const resp = await fetch(`http://localhost:5000/subjects/${subjectId}`, {
+      const resp = await fetch(`http://localhost:5019/subjects/${subjectId}`, {
         method: "DELETE",
         credentials: "include",
         headers:{
@@ -83,12 +116,18 @@ export default function Subjects({
       if (!resp.ok) {
         throw new Error('Eroare la stergerea subiectului');
       }
-const updated_subjects = (subjects || []).filter(subject => {
+      
+      const updated_subjects = (subjects || []).filter(subject => {
         const sid = subject.id ?? subject.subject_id;
         return sid !== subjectId;
       });
       
       setter_subjects(updated_subjects);
+      setSubjectCounts(prev => {
+        const newCounts = { ...prev };
+        delete newCounts[subjectId];
+        return newCounts;
+      });
       
       const selected_id = selected_categories?.id ?? selected_categories?.subject_id;
       if (selected_id === subjectId) {
@@ -166,6 +205,8 @@ const updated_subjects = (subjects || []).filter(subject => {
         ) : (
           subjects.map((subject) => {
             const sid = subject.id ?? subject.subject_id;
+            const noteCount = subjectCounts[sid] ?? subject.notes_count ?? 0;
+            
             return (
               <li
                 key={sid}
@@ -175,10 +216,13 @@ const updated_subjects = (subjects || []).filter(subject => {
                 onClick={() => handler_clicked_subject({ ...subject, id: sid })}
               >
                 <span className="flex-1 truncate">{subject.name}</span>
-                <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full">
-                  {subject.notes?.length || 0}
+                <span className={`text-xs px-2 py-1 rounded-full ${
+                  noteCount > 0 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'bg-gray-200 text-gray-600'
+                }`}>
+                  {noteCount}
                 </span>
-               
               </li>
             );
           })

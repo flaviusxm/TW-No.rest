@@ -1,55 +1,61 @@
-module.exports=(sequalize,DataTypes)=>
-{
-    const Note=sequalize.define('Note',{
-        note_id:{
-            type:DataTypes.INTEGER,
-            primaryKey:true,
-            autoIncrement:true
+// models/note.js
+module.exports = (sequelize, DataTypes) => {
+    const Note = sequelize.define('Note', {
+        note_id: {
+            type: DataTypes.INTEGER,
+            primaryKey: true,
+            autoIncrement: true
         },
-        user_id:{
-            type:DataTypes.INTEGER,
-            allowNull:false,
-            references:{
-                model:'Users',
-                key:'user_id'
+        user_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            references: {
+                model: 'Users',
+                key: 'user_id'
             }
         },
-        subject_id:{
-            type:DataTypes.INTEGER,
-            allowNull:false,
-            references:{
-                model:'Subjects',
-                key:'subject_id'
+        subject_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            references: {
+                model: 'Subjects',
+                key: 'subject_id'
             }
         },
-        title:{
-            type:DataTypes.STRING(200),
-            allowNull:false
+        title: {
+            type: DataTypes.STRING(200),
+            allowNull: false
         },
-        markdown_content:{
-            type:DataTypes.TEXT,
-            allowNull:true
+        description: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+            defaultValue: ''
         },
-        course_date:{
-                type:DataTypes.DATEONLY,allowNull:true
+        markdown_content: {
+            type: DataTypes.TEXT,
+            allowNull: true
         },
-        created_at:{
-            type:DataTypes.DATE,
-            defaultValue:DataTypes.NOW
+        course_date: {
+            type: DataTypes.DATEONLY,
+            allowNull: true
         },
-        updated_at:{
-            type:DataTypes.DATE,
-            defaultValue:DataTypes.NOW
+        created_at: {
+            type: DataTypes.DATE,
+            defaultValue: DataTypes.NOW
+        },
+        updated_at: {
+            type: DataTypes.DATE,
+            defaultValue: DataTypes.NOW
         }
-    },{
-        tableName:'Notes',
-        timestamps:false,
-        underscored:true,
-        hooks:{
-            beforeUpdate:(note)=>{
-                note.updated_at=new Date();
+    }, {
+        tableName: 'Notes',
+        timestamps: false,
+        underscored: true,
+        hooks: {
+            beforeUpdate: (note) => {
+                note.updated_at = new Date();
             }
         }
-    })
+    });
     return Note;
-}
+};

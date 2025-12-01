@@ -7,7 +7,7 @@ exports.configure_passport=()=>{
 {
     clientID:process.env.GOOGLE_CL_ID,
     clientSecret:process.env.GOOGLE_CL_SECRET,
-    callbackURL:"http://localhost:5000/auth/google/callback"
+    callbackURL:"http://localhost:5019/auth/google/callback"
 },this.google_auth_callback
     ));
     passport.serializeUser(this.serializeUser);
@@ -15,19 +15,26 @@ exports.configure_passport=()=>{
 }
 exports.google_auth_callback = async (accessToken, refreshToken, profile, done) => {
   try {
+    const email = profile.emails[0].value;
+    const validator = /^[a-zA-Z]+[0-9]{2}@stud\.ase\.ro$/;
+
+    // Verifică emailul imediat
+    if (!validator.test(email)) {
+      return done(null, false, { message: 'Email invalid!' });
+    }
+
+    // Continuă cu userul
     let user = await USER.findOne({ where: { google_id: profile.id } });
 
     if (!user) {
       user = await USER.create({
         google_id: profile.id,
-        email: profile.emails[0].value,
+        email,
         name: profile.displayName,
         pictureUrl: profile.photos[0].value,
         last_login: new Date(),
       });
-    } else {
-      await user.update({ last_login: new Date() });
-    }
+    } else {await user.update({ last_login: new Date() });}
 
     return done(null, user);
   } catch (error) {
@@ -50,16 +57,22 @@ exports.get_auth_status=(req,resp)=>{
 exports.google_auth_success=(req,resp)=>{
     resp.redirect('http://localhost:3000/landing')
 }
-exports.logout=(req,resp)=>{
-    req.logOut((err)=>{
-        if(err){return resp.status(500).json({err:'Eroare logout !'})}
-        else{req.session.destroy((err)=>{
-            if(err){return resp.status(500).json({err:'Eroare sesiune !'})}
-        })}
-        resp.clearCookie('connect.sid');
-        resp.json({message:'Logout cu succes! '})
-    })
-}
+exports.logout = (req, resp) => {
+    req.logOut(err => {
+        if (err) return resp.status(500).json({ err: "Eroare logout!" });
+        req.session.destroy(err => {
+            if (err) return resp.status(500).json({ err: "Eroare sesiune!" });
+            resp.clearCookie("connect.sid", {
+                path: "/",
+                httpOnly: true,
+                secure: false,
+                sameSite: "lax"
+            });
+            return resp.json({ message: "Logout cu succes!" });
+        });
+    });
+};
+
 
 exports.auth_fail = (req, resp) => {
   resp.status(401).json({ err: 'Autentificare esuata' });

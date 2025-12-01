@@ -25,23 +25,91 @@ exports.create_subject = async (req, resp) => {
     }
 }
 
-exports.get_all_subjects=async(req,resp)=>{
-    try{
-        const subjects=await Subject.findAll({
-            order:[['name','ASC']]
-        })
-        const mapped_subjects=subjects.map(sub=>(
-           { id: sub.subject_id,
+exports.get_subject_notes = async (req, resp) => {
+    try {
+        const subject = await Subject.findByPk(req.params.id);
+        if (!subject) return resp.status(404).json([]);
+        
+        const notes = await Note.findAll({ 
+            where: { 
+                subject_id: req.params.id, 
+                user_id: req.user.user_id 
+            }, 
+            order: [['created_at', 'DESC']] 
+        });
+        
+        const mapped = notes.map(n => ({
+            id: n.note_id,
+            title: n.title,
+            description: n.description || '',
+            content: n.markdown_content,
+            subject_id: n.subject_id,
+            subject_name: subject.name,
+            created_at: n.created_at,
+            updated_at: n.updated_at,
+        }));
+        
+        resp.json(mapped);
+    } catch (err) {
+        resp.status(500).json([]);
+    }
+}
+exports.get_notes_count = async (req, resp) => {
+    try {
+        const subject = await Subject.findByPk(req.params.id);
+        if (!subject) {
+            return resp.status(404).json({ 
+                error: 'Subiectul nu a fost gasit' 
+            });
+        }
+        
+        const notes_counter = await Note.count({
+            where: { 
+                subject_id: req.params.id,
+                user_id: req.user.user_id 
+            }
+        });
+        
+        resp.json({
+            subject_id: parseInt(req.params.id),
+            subject_name: subject.name,
+            notes_count: notes_counter
+        });
+    } catch (err) {
+        console.error('Error getting subject count:', err);
+        resp.status(500).json({ err: err.message });}
+}
+
+exports.get_all_subjects = async (req, resp) => {
+    try {
+        const userNotes = await Note.findAll({
+            where: { user_id: req.user.user_id },
+            attributes: ['subject_id'],
+            group: ['subject_id']
+        });
+        
+        const subject_ids = userNotes.map(note => note.subject_id);
+        
+        const subjects = await Subject.findAll({
+            where: {
+                subject_id: subject_ids
+            },
+            order: [['name', 'ASC']]
+        });
+        
+        const mapped_subjects = subjects.map(sub => ({
+            id: sub.subject_id,
             name: sub.name,
             description: sub.description,
             created_at: sub.created_on,
-           }
-        ));
+        }));
+        
         resp.json(mapped_subjects);
-    }catch(err){
-        resp.status(500).json({err:err.message})
+    } catch (err) {
+        console.error('Error getting subjects:', err);
+        resp.status(500).json({ err: err.message });
     }
-}
+};
 exports.get_subject_notes_count=async(req,resp)=>{
     try{
         const subject=await Subject.findByPk(req.params.id);

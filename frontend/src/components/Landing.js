@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import rws_app_logo from '../assets/rws_logo.png';
 import SubjectsTagsGroupsBar from './landing_components/SubjectsTagsGroupsBar';
 import ContentBar from './landing_components/ContentBar';
@@ -21,50 +22,78 @@ const getColorFromInitial = (initial) => {
   return colors[colorIndex];
 };
 
-export default function Landing({ user, setUser }) {
+export default function Landing() {
+ const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
   const [subjects, setter_subjects] = useState([]);
   const [selected_categories, setter_selected_categories] = useState(null);
   const [selected_notes, setter_selected_notes] = useState([]);
   const [selected_note, setter_selected_note] = useState(null);
   const [account_menu_open, setter_account_menu_open] = useState(false);
   const [show_note_user, setter_show_note_user] = useState(false);
+  
+const navigate=useNavigate();
+  useEffect(() => {
+    const verifyUser = async () => {
+      try {
+        const res = await fetch("http://localhost:5019/auth/status", {
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          navigate("/");
+          return;
+        }
+
+        const data = await res.json();
+        if (data?.user) {
+          setUser(data.user);
+        } else {
+          navigate("/");
+        }
+      } catch (e) {
+        navigate("/");
+      }
+    };
+
+    verifyUser();
+  }, [navigate]);
+
 
   useEffect(() => {
     const fetch_subjects = async () => {
       try {
-        const resp = await fetch("http://localhost:5000/subjects", {
-          credentials: "include"
+        const resp = await fetch("http://localhost:5019/subjects", {
+          credentials: "include",
         });
-        
+
         if (resp.ok) {
           const data = await resp.json();
           console.log('Subjects loaded:', data);
           setter_subjects(data);
+        } else if (resp.status === 401) {
+          navigate('/');
         }
       } catch (err) {
         console.error("Error loading subjects:", err);
       }
     };
 
-    if (user) {
-      fetch_subjects();
-    }
-  }, [user]);
+    fetch_subjects();
+  }, [navigate]);
 
-  const handler_note_click = (note) => {
-    setter_selected_note(note);
-  };
 
   const handler_logout = async () => {
     try {
-      await fetch("http://localhost:5000/auth/logout", {
+      await fetch("http://localhost:5019/auth/logout", {
         method: "POST",
-        credentials: "include"
+        credentials: "include",
       });
+      setUser(null);
+      navigate('/');
     } catch (err) {
       console.error("Logout error:", err);
-    } finally {
-      setUser(null);
     }
   };
 

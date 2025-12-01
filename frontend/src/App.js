@@ -2,46 +2,46 @@ import rws_app_logo from './assets/rws_logo.png';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {useNavigate} from 'react-router-dom';
-import Landing from './components/Landing';
-
-function App() {
+export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [subjects, setter_subjects] = useState([]);
   const [selected_categories, setter_selected_categories] = useState(null);
   const [selected_note, setter_selected_note] = useState(null);
   const [show_note_user, setter_show_note_user] = useState(false);
-  const navigate=useNavigate();
+const navigate=useNavigate();
   // check user status
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        const res = await fetch("http://localhost:5000/auth/status", {
-          credentials: "include",
-        });
-        
-        if (res.ok) {
-          const data = await res.json();
-          console.log('auth/status data =', data);
-          if (data?.user) {
-            setUser(data.user);
-            navigate('/landing');
-          } else if (data) {
-            setUser(data);
-            navigate('/landing');
-          }
-        }
-      } catch (err) {
-        console.error("Error checking auth status:", err);
-      } finally {
+useEffect(() => {
+  const checkAuthStatus = async () => {
+    try {
+      const res = await fetch("http://localhost:5019/auth/status", {
+        credentials: "include",
+      });
+
+      if (!res.ok) {
         setLoading(false);
+        return;
       }
-    };
-    checkAuthStatus();
-  }, [navigate]);
+
+      const data = await res.json();
+
+      if (data.user) {
+        navigate('/landing');
+      }
+
+    } catch (err) {
+      console.error("Error checking auth status:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  checkAuthStatus();
+}, []);
+
 
   const handleGoogleLogin = () => {
-    window.location.href = "http://localhost:5000/auth/google";
+    window.location.href = "http://localhost:5019/auth/google";
   };
 
   
@@ -53,10 +53,7 @@ function App() {
       </div>
     );
   }
-if (user) {
-  return <Landing user={user} setUser={setUser} />;
-}
- 
+
 
   // Login UI
   return (
@@ -175,4 +172,3 @@ if (user) {
   );
 }
 
-export default App;
