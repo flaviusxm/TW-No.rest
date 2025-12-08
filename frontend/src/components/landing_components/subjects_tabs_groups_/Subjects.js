@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 export default function Subjects({ 
-  subjects, 
+  subjects = [], 
   setter_subjects, 
   selected_categories, 
   setter_selected_categories, 
@@ -11,51 +11,48 @@ export default function Subjects({
 }) {
   const [show_add_subject, setter_show_add_subject] = useState(false);
   const [new_subject_name, setter_new_subject_name] = useState('');
-  const [is_adding, setter_is_adding] = useState(false);
-  const [is_manual_save, setter_is_manual_save] = useState(false);
   const [subjectCounts, setSubjectCounts] = useState({});
 
+  // Fetch counts pentru subiecte
   useEffect(() => {
+    if (!subjects || !Array.isArray(subjects) || subjects.length === 0) return;
+    
+    let isMounted = true;
+
     const fetchSubjectCounts = async () => {
-      if (!subjects || subjects.length === 0) return;
-      
       const counts = {};
       
       await Promise.all(
         subjects.map(async (subject) => {
+          if (!subject) return;
           const sid = subject.id ?? subject.subject_id;
+          if (!sid) return;
+
           try {
             const resp = await fetch(`http://localhost:5019/subjects/${sid}/count`, {
               credentials: "include",
             });
             
-            if (resp.ok) {
+            if (resp.ok && isMounted) {
               const data = await resp.json();
               counts[sid] = data.notes_count;
             }
           } catch (err) {
             console.error(`Error fetching count for subject ${sid}:`, err);
-            counts[sid] = 0;
+            // Nu setam 0 explicit aici pentru a nu suprascrie date vechi in caz de eroare temporara
           }
         })
       );
       
-      setSubjectCounts(counts);
+      if (isMounted) {
+        setSubjectCounts(prev => ({ ...prev, ...counts }));
+      }
     };
     
     fetchSubjectCounts();
+
+    return () => { isMounted = false; };
   }, [subjects]);
-
-  useEffect(() => {
-    if (!is_adding || is_manual_save) return; 
-    if (!new_subject_name.trim()) return;
-    
-    const timeoutId = setTimeout(() => {
-      handler_add_subject();
-    }, 1000);
-
-    return () => clearTimeout(timeoutId);
-  }, [new_subject_name, is_adding, is_manual_save]);
 
   const handler_add_subject = async () => {
     if (!new_subject_name.trim()) return;
@@ -64,45 +61,67 @@ export default function Subjects({
       const resp = await fetch("http://localhost:5019/subjects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials:"include",
+        credentials: "include",
         body: JSON.stringify({ name: new_subject_name.trim() })
       });
 
       if (!resp.ok) {
-        const errorData = await resp.json();
-        throw new Error(errorData.err || `Eroare HTTP: ${resp.status}`);
+        // Incercam sa extragem eroarea JSON, altfel folosim status text
+        let errorMsg = `Eroare HTTP: ${resp.status}`;
+        try {
+          const errData = await resp.json();
+          if (errData.err) errorMsg = errData.err;
+        } catch (e) {
+          // Response not JSON
+        }
+        throw new Error(errorMsg);
       }
 
       const created_subject = await resp.json();
-      console.log('Subiect creat:', created_subject);
+      console.log('Subject created:', created_subject);
       
-      setter_subjects(prev => Array.isArray(prev) ? [...prev, created_subject] : [created_subject]);
-      setSubjectCounts(prev => ({
-        ...prev,
-        [created_subject.id]: 0
-      }));
+      // 1. Actualizam lista de subiecte
+      if (setter_subjects) {
+        setter_subjects(prev => {
+           const safePrev = Array.isArray(prev) ? prev : [];
+           return [...safePrev, created_subject];
+        });
+      } else {
+        console.warn("setter_subjects lipseste! UI-ul nu se va actualiza.");
+      }
+      
+      // 2. Initializam contorul pentru noul subiect (0 note)
+      const newId = created_subject.id ?? created_subject.subject_id;
+      if (newId) {
+        setSubjectCounts(prev => ({
+          ...prev,
+          [newId]: 0
+        }));
+      }
     
+      // 3. Resetam UI-ul
       setter_new_subject_name('');
       setter_show_add_subject(false);
-      setter_is_adding(false);
-      setter_is_manual_save(false);
+
     } catch (err) {
       console.error("Eroare adaugare subiect:", err);
-      setter_is_manual_save(false); 
+      alert(`Nu s-a putut salva subiectul: ${err.message}`);
     }
   };
 
   const handler_save_now = () => {
-    setter_is_manual_save(true); 
     handler_add_subject();
   };
 
   const handler_clicked_subject = (subject) => {
-    setter_selected_categories(subject);
+    if (setter_selected_categories) {
+      setter_selected_categories(subject);
+    }
   };
 
   const handler_delete_subject = async (subjectId, e) => {
     e.stopPropagation();
+    if (!window.confirm("Esti sigur ca vrei sa stergi acest subiect?")) return;
     
     try {
       const resp = await fetch(`http://localhost:5019/subjects/${subjectId}`, {
@@ -117,12 +136,13 @@ export default function Subjects({
         throw new Error('Eroare la stergerea subiectului');
       }
       
-      const updated_subjects = (subjects || []).filter(subject => {
-        const sid = subject.id ?? subject.subject_id;
-        return sid !== subjectId;
-      });
-      
-      setter_subjects(updated_subjects);
+      if (setter_subjects) {
+        setter_subjects(prev => prev.filter(subject => {
+          const sid = subject.id ?? subject.subject_id;
+          return sid !== subjectId;
+        }));
+      }
+
       setSubjectCounts(prev => {
         const newCounts = { ...prev };
         delete newCounts[subjectId];
@@ -130,27 +150,27 @@ export default function Subjects({
       });
       
       const selected_id = selected_categories?.id ?? selected_categories?.subject_id;
-      if (selected_id === subjectId) {
+      if (selected_id === subjectId && setter_selected_categories) {
         setter_selected_categories(null);
       }
     } catch (err) {
       console.error("Eroare stergere subiect:", err);
+      alert("Nu s-a putut sterge subiectul.");
     }
   };
 
   const handler_start_adding_subject = () => {
     setter_show_add_subject(true);
-    setter_is_adding(true);
-    setter_is_manual_save(false); 
     setter_new_subject_name('');
   };
 
   const handler_cancel_add_subject = () => {
     setter_show_add_subject(false);
-    setter_is_adding(false);
-    setter_is_manual_save(false); 
     setter_new_subject_name('');
   };
+
+  // Safe subjects array pentru randare
+  const safeSubjects = Array.isArray(subjects) ? subjects : [];
 
   return (
     <div className="mb-6">
@@ -174,7 +194,8 @@ export default function Subjects({
             type="text" 
             value={new_subject_name} 
             onChange={(e) => setter_new_subject_name(e.target.value)}
-            placeholder="Enter subject name... (auto-saves after 1s or click Save Now)"
+            placeholder="Enter subject name..."
+            onKeyDown={(e) => { if (e.key === 'Enter') handler_save_now(); }}
             className="w-full px-3 py-2 border rounded mb-2 focus:outline-none focus:ring-2 focus:ring-[#4E8DC4]"
             autoFocus 
           />
@@ -193,36 +214,49 @@ export default function Subjects({
               Cancel
             </button>
           </div>
-          {new_subject_name.trim() && !is_manual_save && ( 
-            <p className="text-xs text-gray-500 mt-2">Subject will be saved automatically...</p>
-          )}
         </div>
       )}
 
       <ul className="space-y-1">
-        {subjects.length === 0 ? (
+        {safeSubjects.length === 0 ? (
           <li className="text-gray-500 text-sm py-2 text-center">No subjects yet</li>
         ) : (
-          subjects.map((subject) => {
+          safeSubjects.map((subject) => {
+            if (!subject) return null;
+
             const sid = subject.id ?? subject.subject_id;
             const noteCount = subjectCounts[sid] ?? subject.notes_count ?? 0;
+            const isSelected = (selected_categories?.id ?? selected_categories?.subject_id) === sid;
             
             return (
               <li
                 key={sid}
                 className={`cursor-pointer px-3 py-2 rounded hover:bg-[#E3F0FF] transition-colors group flex justify-between items-center ${
-                  (selected_categories?.id ?? selected_categories?.subject_id) === sid ? 'bg-[#4E8DC4] text-white' : ''
+                  isSelected ? 'bg-[#4E8DC4] text-white' : ''
                 }`}
                 onClick={() => handler_clicked_subject({ ...subject, id: sid })}
               >
                 <span className="flex-1 truncate">{subject.name}</span>
-                <span className={`text-xs px-2 py-1 rounded-full ${
-                  noteCount > 0 
-                    ? 'bg-blue-100 text-blue-700' 
-                    : 'bg-gray-200 text-gray-600'
-                }`}>
-                  {noteCount}
-                </span>
+                
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    isSelected ? 'bg-blue-400 text-white' : (noteCount > 0 ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-600')
+                  }`}>
+                    {noteCount}
+                  </span>
+
+                  <button
+                    onClick={(e) => handler_delete_subject(sid, e)}
+                    className={`p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity ${
+                       isSelected ? 'text-white hover:bg-blue-600' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
+                    }`}
+                    title="Delete subject"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
               </li>
             );
           })

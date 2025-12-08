@@ -4,7 +4,6 @@ import rws_app_logo from '../assets/rws_logo.png';
 import SubjectsTagsGroupsBar from './landing_components/SubjectsTagsGroupsBar';
 import ContentBar from './landing_components/ContentBar';
 
-
 const getInitial = (name) => {
   if (!name) return 'U';
   return name.charAt(0).toUpperCase();
@@ -23,17 +22,40 @@ const getColorFromInitial = (initial) => {
 };
 
 export default function Landing() {
- const [user, setUser] = useState(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+
+  const [groups, setter_groups] = useState([]);
   const [subjects, setter_subjects] = useState([]);
+  
+  // State-uri noi pentru filtre
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    dateStart: '',
+    dateEnd: '',
+    scopeSubjects: true,
+    scopeGroups: true,
+    onlyWithTags: false,
+    onlyShared: false
+  });
+
   const [selected_categories, setter_selected_categories] = useState(null);
   const [selected_notes, setter_selected_notes] = useState([]);
   const [selected_note, setter_selected_note] = useState(null);
   const [account_menu_open, setter_account_menu_open] = useState(false);
   const [show_note_user, setter_show_note_user] = useState(false);
   
-const navigate=useNavigate();
+  const navigate = useNavigate();
+
+  // Handler pentru schimbarea filtrelor
+  const handleFilterChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
   useEffect(() => {
     const verifyUser = async () => {
       try {
@@ -60,7 +82,6 @@ const navigate=useNavigate();
     verifyUser();
   }, [navigate]);
 
-
   useEffect(() => {
     const fetch_subjects = async () => {
       try {
@@ -83,6 +104,24 @@ const navigate=useNavigate();
     fetch_subjects();
   }, [navigate]);
 
+  useEffect(() => {
+    const fetch_groups = async () => {
+      try {
+        const resp = await fetch("http://localhost:5019/groups", {
+          credentials: "include",
+        });
+
+        if (resp.ok) {
+          const data = await resp.json();
+          console.log('Groups loaded:', data);
+          setter_groups(data);
+        }
+      } catch (err) {
+        console.error("Error loading groups:", err);
+      }
+    };
+    fetch_groups();
+  }, [navigate]);
 
   const handler_logout = async () => {
     try {
@@ -102,18 +141,136 @@ const navigate=useNavigate();
 
   return (
     <div className="h-screen w-screen flex flex-col bg-[#f6f8fb]">
-      <header className="flex items-center px-8 py-4 bg-white shadow-sm">
+      <header className="flex items-center px-8 py-4 bg-white shadow-sm z-20 relative">
         <div className="flex items-center gap-6 w-1/3">
           <img src={rws_app_logo} className="w-24 shadow-xl rounded-lg" alt="logo" />
         </div>
 
-        <div className="flex justify-center w-1/3">
-          <input
-            type="text"
-            placeholder="Search notes..."
-            className="px-4 py-2 rounded-lg w-96 shadow-xl 
-                       focus:outline-none focus:ring-2 focus:ring-[#4E8DC4] focus:border-[#4E8DC4]"
-          />
+        {/* SEARCH + FILTER SECTION */}
+        <div className="flex justify-center w-1/3 relative">
+          <div className="relative flex items-center w-96">
+            <input
+              type="text"
+              placeholder="Search notes..."
+              className="w-full px-4 py-2 pr-10 rounded-lg shadow-xl 
+                         focus:outline-none focus:ring-2 focus:ring-[#4E8DC4] focus:border-[#4E8DC4]"
+            />
+            
+            {/* Filter Icon Button */}
+            <button 
+              onClick={() => setShowFilters(!showFilters)}
+              className={`absolute right-2 p-1 rounded-md transition-colors ${
+                showFilters ? 'bg-blue-100 text-[#4E8DC4]' : 'text-gray-400 hover:text-[#4E8DC4]'
+              }`}
+              title="Advanced Filters"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
+              </svg>
+            </button>
+          </div>
+
+          {/* FILTER PANEL */}
+          {showFilters && (
+            <div className="absolute top-12 w-96 bg-white rounded-lg shadow-2xl border border-gray-100 p-5 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold text-gray-700 text-sm">Advanced Filters</h3>
+                <button 
+                  onClick={() => setFilters({
+                    dateStart: '', dateEnd: '', scopeSubjects: true, scopeGroups: true, onlyWithTags: false, onlyShared: false
+                  })}
+                  className="text-xs text-[#4E8DC4] hover:underline"
+                >
+                  Reset
+                </button>
+              </div>
+
+              {/* Course Date Range */}
+              <div className="mb-4">
+                <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Course Date</label>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <span className="text-xs text-gray-400 block mb-1">From</span>
+                    <input 
+                      type="date" 
+                      name="dateStart"
+                      value={filters.dateStart}
+                      onChange={handleFilterChange}
+                      className="w-full text-sm border rounded px-2 py-1 focus:outline-none focus:border-[#4E8DC4]"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <span className="text-xs text-gray-400 block mb-1">To</span>
+                    <input 
+                      type="date" 
+                      name="dateEnd"
+                      value={filters.dateEnd}
+                      onChange={handleFilterChange}
+                      className="w-full text-sm border rounded px-2 py-1 focus:outline-none focus:border-[#4E8DC4]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <hr className="my-3 border-gray-100" />
+
+              {/* Search Scope */}
+              <div className="mb-4">
+                <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Search In</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      name="scopeSubjects"
+                      checked={filters.scopeSubjects}
+                      onChange={handleFilterChange}
+                      className="accent-[#4E8DC4] w-4 h-4 rounded" 
+                    />
+                    <span className="text-sm text-gray-700">Subjects</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      name="scopeGroups"
+                      checked={filters.scopeGroups}
+                      onChange={handleFilterChange}
+                      className="accent-[#4E8DC4] w-4 h-4 rounded" 
+                    />
+                    <span className="text-sm text-gray-700">Groups</span>
+                  </label>
+                </div>
+              </div>
+
+              <hr className="my-3 border-gray-100" />
+
+              {/* Other Options */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Options</label>
+                <div className="flex flex-col gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      name="onlyWithTags"
+                      checked={filters.onlyWithTags}
+                      onChange={handleFilterChange}
+                      className="accent-[#4E8DC4] w-4 h-4 rounded" 
+                    />
+                    <span className="text-sm text-gray-700">Only notes with tags</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      name="onlyShared"
+                      checked={filters.onlyShared}
+                      onChange={handleFilterChange}
+                      className="accent-[#4E8DC4] w-4 h-4 rounded" 
+                    />
+                    <span className="text-sm text-gray-700">Only shared notes</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end w-1/3 relative">
@@ -167,6 +324,8 @@ const navigate=useNavigate();
           <SubjectsTagsGroupsBar
             subjects={subjects}
             setter_subjects={setter_subjects}
+            groups={groups} 
+            setter_groups={setter_groups}
             selected_categories={selected_categories}
             setter_selected_categories={setter_selected_categories}
             setter_selected_note={setter_selected_note}
@@ -182,8 +341,6 @@ const navigate=useNavigate();
             setter_selected_categories={setter_selected_categories}
           />
         </div>
-
-      
       </div>
 
       <style>
