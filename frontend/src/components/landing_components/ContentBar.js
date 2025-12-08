@@ -9,6 +9,7 @@ export default function ContentBar({selected_category,setter_selected_note,sette
   const [deletingNoteId, setDeletingNoteId] = useState(null);
 
   const saveTimer = useRef(null);
+  const lastSavedState = useRef(null);
 
   const subjectId = useMemo(() => selected_category?.id ?? selected_category?.subject_id, [selected_category]);
   
@@ -74,6 +75,7 @@ export default function ContentBar({selected_category,setter_selected_note,sette
       
       setCurrentNote(withSubject);
       setter_selected_note(withSubject);
+      lastSavedState.current=withSubject;
     } catch (err) {
       console.error("Error loading note details:", err);
     }
@@ -187,6 +189,7 @@ export default function ContentBar({selected_category,setter_selected_note,sette
       setter_notes(prev => [withSubject, ...prev]);
       setCurrentNote(withSubject);
       setter_selected_note(withSubject);
+      lastSavedState.current=withSubject;
     } catch (err) {
       console.error('Error creating note:', err);
     } finally {
@@ -200,6 +203,16 @@ export default function ContentBar({selected_category,setter_selected_note,sette
     if (saveTimer.current) clearTimeout(saveTimer.current);
     
     saveTimer.current = setTimeout(async () => {
+
+      if(lastSavedState.current)
+      {const isUnchanged=current_note.title === lastSavedState.current.title &&
+        (current_note.description || '') === (lastSavedState.current.description || '') &&
+        (current_note.markdown_content || '') === (lastSavedState.current.markdown_content || '') &&
+        current_note.course_date === lastSavedState.current.course_date;
+        if(isUnchanged){
+          return;
+        }
+        }
       try {
         const resp = await fetch(`http://localhost:5019/notes/${current_note.id}`, {
           method: 'PUT',
@@ -223,6 +236,7 @@ export default function ContentBar({selected_category,setter_selected_note,sette
           subject: current_note.subject ?? selected_category 
         };
         
+        lastSavedState.current=merged;
         setCurrentNote(merged);
         setter_selected_note(merged);
         setter_notes(prev => prev.map(n => (n.id ?? n.note_id) === merged.id ? merged : n));
@@ -297,15 +311,25 @@ export default function ContentBar({selected_category,setter_selected_note,sette
         </div>
        
         <div className="bg-white rounded-lg shadow-sm border p-6 space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
-            <input
-              type="text"
-              value={current_note.title || ''}
-              onChange={(e) => setCurrentNote(prev => ({ ...prev, title: e.target.value }))}
-              className="w-full text-2xl font-bold text-gray-800 border-b-2 border-gray-200 focus:border-[#4E8DC4] outline-none pb-2"
-              placeholder="Note title..."
-            />
+        <div className="flex gap-6 items-end">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+              <input
+                type="text"
+                value={current_note.title || ''}
+                onChange={(e) => setCurrentNote(prev => ({ ...prev, title: e.target.value }))}
+                className="w-full text-2xl font-bold text-gray-800 border-b-2 border-gray-200 focus:border-[#4E8DC4] outline-none pb-2"
+                placeholder="Note title..."
+              />
+            </div>
+
+        
+            <div className="w-1/4 min-w-[150px]">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tag</label>
+              <div className="w-full text-lg text-gray-500 border-b-2 border-gray-200 pb-2 truncate">
+                {current_note.tag_name || "none"}
+              </div>
+            </div>
           </div>
 
           <div className="flex gap-4">
@@ -427,24 +451,24 @@ export default function ContentBar({selected_category,setter_selected_note,sette
                       {note.title || 'Untitled Note'}
                     </h3>
                     {note.description && (
-                      <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                        {note.description}
-                      </p>
+                      <p className="text-sm text-gray-600 mt-1 font-medium">
+                      {note.tag_name || 'none'}
+                    </p>
                     )}
                   </div>
             
                   <button
                     onClick={(e) => handler_delete_note(noteId, e)}
                     disabled={isDeleting}
-                    className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors ml-2"
+                    className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors ml-2"
                     title="Delete note"
                   >
                     {isDeleting ? (
                       <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
                     ) : (
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+</svg>
                     )}
                   </button>
                 </div>

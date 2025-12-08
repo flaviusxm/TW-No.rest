@@ -6,11 +6,14 @@ import Groups from './subjects_tabs_groups_/Groups';
 export default function SubjectsTagsGroupsBar({
   subjects,
   setter_subjects,
+  groups,
+  setter_groups,
   selected_categories,
   setter_selected_categories,
   setter_selected_note,
   setter_show_note_user
 }) {
+  
   return (
     <div className="h-full flex flex-col space-y-6">
       
@@ -28,14 +31,15 @@ export default function SubjectsTagsGroupsBar({
 
       <div className="bg-white rounded-lg shadow-sm border p-4">
         <Tags 
-
         />
       </div>
 
-      {/* Groups Section */}
       <div className="bg-white rounded-lg shadow-sm border p-4">
         <Groups 
-          
+          groups={groups || []} 
+          setter_groups={setter_groups} 
+          selected_categories={selected_categories}
+          setter_selected_categories={setter_selected_categories}
         />
       </div>
     </div>
