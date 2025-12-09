@@ -1,6 +1,5 @@
 import React from 'react';
 import Subjects from './subjects_tabs_groups_/Subjects';
-import Tags from './subjects_tabs_groups_/Tags';
 import Groups from './subjects_tabs_groups_/Groups';
 
 export default function SubjectsTagsGroupsBar({
@@ -13,10 +12,10 @@ export default function SubjectsTagsGroupsBar({
   setter_selected_note,
   setter_show_note_user
 }) {
-  
+
   return (
     <div className="h-full flex flex-col space-y-6">
-      
+
       <div className="bg-white rounded-lg shadow-sm border p-4">
         <Subjects
           subjects={subjects || []}
@@ -29,15 +28,12 @@ export default function SubjectsTagsGroupsBar({
         />
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border p-4">
-        <Tags 
-        />
-      </div>
+
 
       <div className="bg-white rounded-lg shadow-sm border p-4">
-        <Groups 
-          groups={groups || []} 
-          setter_groups={setter_groups} 
+        <Groups
+          groups={groups || []}
+          setter_groups={setter_groups}
           selected_categories={selected_categories}
           setter_selected_categories={setter_selected_categories}
         />

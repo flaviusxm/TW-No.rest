@@ -5,9 +5,9 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
     const [notes, setter_notes] = useState([]);
     const [loading, setter_loading] = useState(false);
     const [creating_note, setter_creating_note] = useState(false);
-    const [current_note, setCurrentNote] = useState(null); 
+    const [current_note, setCurrentNote] = useState(null);
     const [deletingNoteId, setDeletingNoteId] = useState(null);
-
+    const [tag_filters, setter_tag_filters] = useState({ 1: true, 2: true, 3: true });
     const saveTimer = useRef(null);
     const lastSavedState = useRef(null);
 
@@ -31,6 +31,10 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
         fetch_notes();
     }, [subjectId]);
 
+    const visible_notes = useMemo(() => {
+        return notes.filter(n => !n.tag_id || tag_filters[n.tag_id]);
+    }, [notes, tag_filters]);
+
     const handler_note_click = async (note) => {
         try {
             const id = note.id ?? note.note_id;
@@ -38,12 +42,12 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
             if (!resp.ok) return;
 
             const selected_note = await resp.json();
-            
+
             const fullNote = {
                 ...selected_note,
                 subject_id: subjectId,
                 subject_name: selected_category?.name,
-                tag_id: selected_note.tag_id ? parseInt(selected_note.tag_id) : null 
+                tag_id: selected_note.tag_id ? parseInt(selected_note.tag_id) : null
             };
 
             setCurrentNote(fullNote);
@@ -56,6 +60,7 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
     const handler_create_note = async () => {
         setter_creating_note(true);
         try {
+            const default_tag_id = 2;
             const resp = await fetch('http://localhost:5019/notes', {
                 method: 'POST',
                 credentials: 'include',
@@ -65,20 +70,22 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
                     subject_id: subjectId,
                     description: '',
                     markdown_content: '',
+                    tag_id: default_tag_id
                 })
             });
 
             if (resp.ok) {
                 const new_note = await resp.json();
-                const withSubject = { 
-                    ...new_note, 
-                    subject_id: subjectId, 
+                const withSubject = {
+                    ...new_note,
+                    subject_id: subjectId,
                     subject_name: selected_category?.name,
-                    tag_name: null 
+                    tag_id: default_tag_id,
+                    tag_name: "Seminar"
                 };
                 setter_notes(prev => [withSubject, ...prev]);
             }
-        } catch (err) { console.error(err); } 
+        } catch (err) { console.error(err); }
         finally { setter_creating_note(false); }
     };
 
@@ -92,7 +99,7 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
                 setter_notes(prev => prev.filter(n => (n.id ?? n.note_id) !== noteId));
                 if (current_note?.id === noteId) setCurrentNote(null);
             }
-        } catch (err) { console.error(err); } 
+        } catch (err) { console.error(err); }
         finally { setDeletingNoteId(null); }
     };
     const handler_delete_subject = async () => {
@@ -116,7 +123,7 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
                 current_note.description === lastSavedState.current.description &&
                 current_note.markdown_content === lastSavedState.current.markdown_content &&
                 current_note.course_date === lastSavedState.current.course_date &&
-                current_note.tag_id === lastSavedState.current.tag_id 
+                current_note.tag_id === lastSavedState.current.tag_id
             ) { return; }
 
             try {
@@ -136,43 +143,43 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
 
                 if (resp.ok) {
                     const updated = await resp.json();
-                    let tagName = updated.tag_name; 
-                    
-                    
+                    let tagName = updated.tag_name;
+
+
                     if (!tagName && updated.tag_id) {
                         if (updated.tag_id === 1) tagName = "Curs";
                         else if (updated.tag_id === 2) tagName = "Seminar";
                         else if (updated.tag_id === 3) tagName = "Diverse";
                     }
 
-                    const merged = { 
-                        ...current_note, 
+                    const merged = {
+                        ...current_note,
                         ...updated,
                         tag_id: updated.tag_id ? parseInt(updated.tag_id) : null,
-                        tag_name: tagName 
+                        tag_name: tagName
                     };
 
                     lastSavedState.current = merged;
                     setter_notes(prev => prev.map(n => {
                         const nid = n.id ?? n.note_id;
                         const cid = merged.id ?? merged.note_id;
-                        if(nid === cid) {
-                            return { ...n, ...merged }; 
+                        if (nid === cid) {
+                            return { ...n, ...merged };
                         }
                         return n;
                     }));
                 }
             } catch (e) { console.error('Autosave error', e); }
-        }, 800); 
+        }, 800);
 
         return () => clearTimeout(saveTimer.current);
-    }, [current_note]); 
+    }, [current_note]);
 
 
-//edit_view
+    //edit_view
     if (current_note) {
         return (
-            <div className="flex-1 bg-gray-50 p-6 overflow-auto h-full">
+            <div className="flex-1 p-6 overflow-auto h-full">
                 <button onClick={() => setCurrentNote(null)} className="mb-4 px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded flex items-center gap-1">
                     ← Back to List
                 </button>
@@ -198,9 +205,9 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
                                 value={current_note.tag_id || ""}
                                 onChange={(e) => {
                                     const val = e.target.value;
-                                    setCurrentNote(prev => ({ 
-                                        ...prev, 
-                                        tag_id: val === "" ? null : parseInt(val) 
+                                    setCurrentNote(prev => ({
+                                        ...prev,
+                                        tag_id: val === "" ? null : parseInt(val)
                                     }));
                                 }}
                                 className="w-full text-lg border-b-2 border-gray-200 pb-2 bg-transparent focus:border-[#4E8DC4] outline-none cursor-pointer"
@@ -253,12 +260,37 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
 
     //list_notes_view
     return (
-        <div className="flex-1 bg-gray-50 p-6 overflow-auto h-full">
+        <div className="flex-1 p-6 overflow-auto h-full">
             <div className="mb-6 flex justify-between items-start">
                 <div>
                     <h2 className="text-xl font-bold text-gray-800">{selected_category.name}</h2>
-                    <p className="text-gray-500 text-sm">{notes.length} notes</p>
+                    <p className="text-gray-500 text-sm">{visible_notes.length} notes</p>
                 </div>
+                {(() => {
+                    const tagOptions = [
+                        { id: 1, name: 'Curs', color: 'text-blue-600' },
+                        { id: 2, name: 'Seminar', color: 'text-blue-600' },
+                        { id: 3, name: 'Diverse', color: 'text-blue-600' }
+                    ];
+
+                    return (
+                        <div className="flex gap-4 mb-4 select-none">
+                            {tagOptions.map(opt => (
+                                <label key={opt.id} className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1 rounded border hover:border-blue-400 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={tag_filters[opt.id]}
+                                        onChange={() => setter_tag_filters(prev => ({ ...prev, [opt.id]: !prev[opt.id] }))}
+                                        className="rounded text-[#4E8DC4] focus:ring-[#4E8DC4]"
+                                    />
+                                    <span className={`text-sm font-medium ${opt.color}`}>
+                                        {opt.name}
+                                    </span>
+                                </label>
+                            ))}
+                        </div>
+                    );
+                })()}
                 <button onClick={handler_delete_subject} className="text-red-500 hover:bg-red-50 p-2 rounded" title="Delete Subject">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </button>
@@ -274,7 +306,7 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
 
             {loading ? <p className="text-center text-gray-500">Loading notes...</p> : (
                 <ul className="space-y-3">
-                    {notes.map(note => {
+                    {visible_notes.map(note => {
                         const noteId = note.id ?? note.note_id;
                         return (
                             <li key={noteId} onClick={() => handler_note_click(note)} className="bg-white p-4 rounded-lg shadow-sm border hover:border-[#4E8DC4] cursor-pointer group">
@@ -284,7 +316,7 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
                                         {note.description && <p className="text-sm text-gray-500 line-clamp-1">{note.description}</p>}
                                     </div>
 
-                                    
+
                                     <button onClick={(e) => handler_delete_note(noteId, e)} className="text-gray-300 hover:text-red-500 ml-2">
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                     </button>
@@ -292,7 +324,7 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
 
                                 {/* footer*/}
                                 <div className="mt-2 pt-2 border-t flex items-center justify-between text-xs text-gray-500">
-                                    
+
                                     {/* stanga */}
                                     <div className="flex items-center gap-3">
                                         {note.tag_name ? (
