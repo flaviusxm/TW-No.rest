@@ -82,34 +82,24 @@ exports.get_notes_count = async (req, resp) => {
 
 exports.get_all_subjects = async (req, resp) => {
     try {
-        const userNotes = await Note.findAll({
-            where: { user_id: req.user.user_id },
-            attributes: ['subject_id'],
-            group: ['subject_id']
-        });
-        
-        const subject_ids = userNotes.map(note => note.subject_id);
-        
         const subjects = await Subject.findAll({
-            where: {
-                subject_id: subject_ids
-            },
             order: [['name', 'ASC']]
         });
-        
+
         const mapped_subjects = subjects.map(sub => ({
             id: sub.subject_id,
             name: sub.name,
             description: sub.description,
             created_at: sub.created_on,
         }));
-        
+
         resp.json(mapped_subjects);
     } catch (err) {
         console.error('Error getting subjects:', err);
         resp.status(500).json({ err: err.message });
     }
 };
+
 exports.get_subject_notes_count=async(req,resp)=>{
     try{
         const subject=await Subject.findByPk(req.params.id);

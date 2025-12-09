@@ -231,9 +231,13 @@ export default function Subjects({
             return (
               <li
                 key={sid}
-                className={`cursor-pointer px-3 py-2 rounded hover:bg-[#E3F0FF] transition-colors group flex justify-between items-center ${
-                  isSelected ? 'bg-[#4E8DC4] text-white' : ''
-                }`}
+                className={`
+    cursor-pointer px-3 py-2 rounded transition-colors group flex justify-between items-center
+    ${isSelected
+      ? 'bg-[#4E8DC4] text-white hover:bg-white hover:text-[#4E8DC4]'
+      : 'hover:bg-[#E3F0FF]'
+    }
+  `}
                 onClick={() => handler_clicked_subject({ ...subject, id: sid })}
               >
                 <span className="flex-1 truncate">{subject.name}</span>
@@ -245,17 +249,25 @@ export default function Subjects({
                     {noteCount}
                   </span>
 
-                  <button
-                    onClick={(e) => handler_delete_subject(sid, e)}
-                    className={`p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity ${
-                       isSelected ? 'text-white hover:bg-blue-600' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
-                    }`}
-                    title="Delete subject"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+       <button
+  onClick={(e) => handler_delete_subject(sid, e)}
+  className={`
+    p-1 rounded opacity-100 transition-colors
+    ${isSelected
+      ? 'text-white hover:text-red-500 hover:bg-red-50'
+      : 'text-red-500 hover:text-red-600 hover:bg-red-50'
+    }
+  `}
+  title="Delete subject"
+>
+
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+    />
+  </svg>
+</button>
+
                 </div>
               </li>
             );
