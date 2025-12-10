@@ -74,36 +74,36 @@ export default function AchievementsContent() {
             setLoading(true);
             try {
                 const realAchievementsData = [
-                    { id: 'rookie', title: 'Rookie', description: 'Creează primele 10 notițe.', unlocked: true, date: '2023-10-01' },
-                    { id: 'scribe', title: 'Scribe', description: 'Creează 50 de notițe.', unlocked: false, date: null },
-                    { id: 'scholar', title: 'Scholar', description: 'Creează 100 de notițe.', unlocked: false, date: null },
-                    { id: 'wordsmith', title: 'Wordsmith', description: 'Scrie peste 10.000 de cuvinte în total.', unlocked: false, date: null },
-                    { id: 'novel_writer', title: 'Novel Writer', description: 'Scrie peste 50.000 de cuvinte în total.', unlocked: false, date: null },
-                    { id: 'the_perfectionist', title: 'The Perfectionist', description: 'Editează notițe de cel puțin 10 ori.', unlocked: true, date: '2023-11-15' },
-                    { id: 'time_traveler', title: 'Time Traveler', description: 'Creează o notiță setând o dată în viitor.', unlocked: true, date: '2023-12-01' },
-                    { id: 'daily_chronicler', title: 'Daily Chronicler', description: 'Creează cel puțin o notiță timp de 7 zile la rând.', unlocked: true, date: '2023-12-05' },
-                    { id: 'the_pioneer', title: 'The Pioneer', description: 'Creează primul tău subiect.', unlocked: true, date: '2023-09-20' },
-                    { id: 'polymath', title: 'Polymath', description: 'Ai notițe în cel puțin 10 subiecte diferite.', unlocked: false, date: null },
-                    { id: 'deep_diver', title: 'Deep Diver', description: 'Ai un subiect cu peste 50 de notițe create.', unlocked: false, date: null },
-                    { id: 'the_tagger', title: 'The Tagger', description: 'Creează 20 de tag-uri diferite.', unlocked: false, date: null },
-                    { id: 'the_connector', title: 'The Connector', description: 'Ai cel puțin 5 notițe asociate unui singur tag.', unlocked: true, date: '2023-10-10' },
-                    { id: 'minimalist', title: 'Minimalist', description: 'Creează o notiță care are titlu, dar nu are conținut.', unlocked: true, date: '2023-12-05' },
-                    { id: 'resource_gatherer', title: 'Resource Gatherer', description: 'Adună peste 50 de atașamente în total.', unlocked: false, date: null },
-                    { id: 'visual_learner', title: 'Visual Learner', description: 'Atașează 10 imagini la notițe.', unlocked: false, date: null },
-                    { id: 'the_streamer', title: 'The Streamer', description: 'Atașează 10 videoclipuri la notițe.', unlocked: false, date: null },
-                    { id: 'researcher', title: 'Researcher', description: 'Atașează 10 PDF-uri la notițe.', unlocked: false, date: null },
-                    { id: 'multimedia_master', title: 'Multimedia Master', description: 'Creează o notiță cu PDF, video și imagine.', unlocked: false, date: null },
-                    { id: 'the_founder', title: 'The Founder', description: 'Creează primul tău grup.', unlocked: true, date: '2023-11-01' },
-                    { id: 'community_leader', title: 'Community Leader', description: 'Creează 5 grupuri.', unlocked: false, date: null },
-                    { id: 'squad_goals', title: 'Squad Goals', description: 'Ai cel puțin 10 oameni într-un grup creat de tine.', unlocked: false, date: null },
-                    { id: 'night_owl', title: 'Night Owl', description: 'Creează 5 notițe între orele 00:00 și 05:00.', unlocked: true, date: '2023-12-10' },
-                    { id: 'early_bird', title: 'Early Bird', description: 'Creează 5 notițe între orele 05:00 și 08:00.', unlocked: false, date: null },
-                    { id: 'marathon_runner', title: 'Marathon Runner', description: '30 de zile la rând cu cel puțin o notiță creată.', unlocked: false, date: null },
-                    { id: 'spring_cleaner', title: 'Spring Cleaner', description: 'Șterge o notiță veche.', unlocked: true, date: '2023-10-30' },
-                    { id: 'full_stack', title: 'Full Stack', description: 'Ai creat un subiect, un tag, o notiță și un grup.', unlocked: true, date: '2023-11-25' },
-                    { id: 'the_architect', title: 'The Architect', description: 'Scrie o singură notiță de peste 2000 de cuvinte.', unlocked: false, date: null },
-                    { id: 'open_source', title: 'Open Source', description: 'Partajează (share) cel puțin 10 notițe.', unlocked: false, date: null },
-                    { id: 'infinity_gauntlet', title: 'Infinity Gauntlet', description: 'Colectează toate celelalte 29 de badge-uri.', unlocked: false, date: null }
+                    { id: 'rookie', title: 'Rookie', description: 'Create your first 10 notes.', unlocked: true, date: '2023-10-01' },
+                    { id: 'scribe', title: 'Scribe', description: 'Create 50 notes.', unlocked: false, date: null },
+                    { id: 'scholar', title: 'Scholar', description: 'Create 100 notes.', unlocked: false, date: null },
+                    { id: 'wordsmith', title: 'Wordsmith', description: 'Write over 10,000 words in total.', unlocked: false, date: null },
+                    { id: 'novel_writer', title: 'Novel Writer', description: 'Write over 50,000 words in total.', unlocked: false, date: null },
+                    { id: 'the_perfectionist', title: 'The Perfectionist', description: 'Edit notes at least 10 times.', unlocked: true, date: '2023-11-15' },
+                    { id: 'time_traveler', title: 'Time Traveler', description: 'Create a note with a future date.', unlocked: true, date: '2023-12-01' },
+                    { id: 'daily_chronicler', title: 'Daily Chronicler', description: 'Create at least one note for 7 consecutive days.', unlocked: true, date: '2023-12-05' },
+                    { id: 'the_pioneer', title: 'The Pioneer', description: 'Create your first subject.', unlocked: true, date: '2023-09-20' },
+                    { id: 'polymath', title: 'Polymath', description: 'Have notes in at least 10 different subjects.', unlocked: false, date: null },
+                    { id: 'deep_diver', title: 'Deep Diver', description: 'Have a subject with over 50 notes.', unlocked: false, date: null },
+                    { id: 'the_tagger', title: 'The Tagger', description: 'Create 20 different tags.', unlocked: false, date: null },
+                    { id: 'the_connector', title: 'The Connector', description: 'Have at least 5 notes associated with a single tag.', unlocked: true, date: '2023-10-10' },
+                    { id: 'minimalist', title: 'Minimalist', description: 'Create a note with a title but no content.', unlocked: true, date: '2023-12-05' },
+                    { id: 'resource_gatherer', title: 'Resource Gatherer', description: 'Collect over 50 attachments in total.', unlocked: false, date: null },
+                    { id: 'visual_learner', title: 'Visual Learner', description: 'Attach 10 images to notes.', unlocked: false, date: null },
+                    { id: 'the_streamer', title: 'The Streamer', description: 'Attach 10 videos to notes.', unlocked: false, date: null },
+                    { id: 'researcher', title: 'Researcher', description: 'Attach 10 PDFs to notes.', unlocked: false, date: null },
+                    { id: 'multimedia_master', title: 'Multimedia Master', description: 'Create a note containing a PDF, a video, and an image.', unlocked: false, date: null },
+                    { id: 'the_founder', title: 'The Founder', description: 'Create your first group.', unlocked: true, date: '2023-11-01' },
+                    { id: 'community_leader', title: 'Community Leader', description: 'Create 5 groups.', unlocked: false, date: null },
+                    { id: 'squad_goals', title: 'Squad Goals', description: 'Have at least 10 members in a group you created.', unlocked: false, date: null },
+                    { id: 'night_owl', title: 'Night Owl', description: 'Create 5 notes between 00:00 and 05:00.', unlocked: true, date: '2023-12-10' },
+                    { id: 'early_bird', title: 'Early Bird', description: 'Create 5 notes between 05:00 and 08:00.', unlocked: false, date: null },
+                    { id: 'marathon_runner', title: 'Marathon Runner', description: 'Create at least one note for 30 consecutive days.', unlocked: false, date: null },
+                    { id: 'spring_cleaner', title: 'Spring Cleaner', description: 'Delete an old note.', unlocked: true, date: '2023-10-30' },
+                    { id: 'full_stack', title: 'Full Stack', description: 'Create a subject, a tag, a note, and a group.', unlocked: true, date: '2023-11-25' },
+                    { id: 'the_architect', title: 'The Architect', description: 'Write a single note with over 2000 words.', unlocked: false, date: null },
+                    { id: 'open_source', title: 'Open Source', description: 'Share at least 10 notes.', unlocked: false, date: null },
+                    { id: 'infinity_gauntlet', title: 'Infinity Gauntlet', description: 'Collect all other 29 badges.', unlocked: false, date: null }
                 ];
                 
                 setTimeout(() => {
@@ -126,13 +126,23 @@ export default function AchievementsContent() {
             <div className="mb-6 border-b pb-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="bg-purple-100 p-2 rounded-lg text-purple-600">
-                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                    <div className=" p-2 rounded-lg text-yellow-500">
+                            <svg 
+                                className="w-8 h-8" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24" 
+                                strokeWidth={2}
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 15a7 7 0 007-7V4H5v4a7 7 0 007 7z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v7" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 22h12" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 4H4.5a2.5 2.5 0 000 5H5" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 4h.5a2.5 2.5 0 010 5H19" />
                             </svg>
                         </div>
                         <div>
-                            <h2 className="text-2xl font-bold text-gray-800">Your Badges</h2>
+                            <h2 className="text-2xl font-bold text-gray-800">Your Achievements</h2>
                             <p className="text-sm text-gray-500">Collect them all to become a master!</p>
                         </div>
                     </div>
