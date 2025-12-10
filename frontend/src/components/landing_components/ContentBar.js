@@ -1,14 +1,14 @@
 import React from 'react';
 import SubjectsContent from './content_bar_/SubjectsContent';
 import GroupsContent from './content_bar_/GroupsContent';
-import { useState } from 'react';
-export default function ContentBar({ selected_category, setter_selected_note, setter_subjects, setter_selected_categories }) {
+import AchievementsContent from './content_bar_/AchievementsContent';
+
+export default function ContentBar({ selected_category, setter_selected_note, setter_subjects, setter_selected_categories, is_achievements }) {
     const is_subject = selected_category && (
         selected_category.subject_id !== undefined ||
         selected_category.hasOwnProperty('notes_count') ||
         !selected_category.hasOwnProperty('created_by')
     );
-    const [is_achievements, setter_is_achievements] = useState(false);
     const is_group = selected_category && (
         selected_category.group_id !== undefined ||
         selected_category.hasOwnProperty('created_by')
@@ -26,6 +26,8 @@ export default function ContentBar({ selected_category, setter_selected_note, se
                 <GroupsContent
                     selected_group={selected_category}
                 />
+            ) : is_achievements ? (
+                <AchievementsContent />
             ) : (
                 <div className="flex flex-col items-center justify-center h-full text-gray-400 ">
                     <svg className="w-20 h-20 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">

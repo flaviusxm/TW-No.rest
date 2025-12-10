@@ -40,10 +40,16 @@ export default function Landing() {
   });
 
   const [selected_categories, setter_selected_categories] = useState(null);
+  const [is_achievements, setter_is_achievements] = useState(false);
   const [selected_notes, setter_selected_notes] = useState([]);
   const [selected_note, setter_selected_note] = useState(null);
   const [account_menu_open, setter_account_menu_open] = useState(false);
   const [show_note_user, setter_show_note_user] = useState(false);
+
+  const handleSetSelectedCategories = (val) => {
+    setter_selected_categories(val);
+    setter_is_achievements(false);
+  };
 
   const navigate = useNavigate();
 
@@ -155,7 +161,7 @@ export default function Landing() {
             groups={groups}
             setter_groups={setter_groups}
             selected_categories={selected_categories}
-            setter_selected_categories={setter_selected_categories}
+            setter_selected_categories={handleSetSelectedCategories}
             setter_selected_note={setter_selected_note}
             setter_show_note_user={setter_show_note_user}
           />
@@ -267,32 +273,7 @@ export default function Landing() {
 
                 <hr className="my-3 border-gray-100" />
 
-                {/* Other Options */}
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Options</label>
-                  <div className="flex flex-col gap-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="onlyWithTags"
-                        checked={filters.onlyWithTags}
-                        onChange={handleFilterChange}
-                        className="accent-[#4E8DC4] w-4 h-4 rounded"
-                      />
-                      <span className="text-sm text-gray-700">Only notes with tags</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="onlyShared"
-                        checked={filters.onlyShared}
-                        onChange={handleFilterChange}
-                        className="accent-[#4E8DC4] w-4 h-4 rounded"
-                      />
-                      <span className="text-sm text-gray-700">Only shared notes</span>
-                    </label>
-                  </div>
-                </div>
+
               </div>
             )}
           </div>
@@ -322,7 +303,13 @@ export default function Landing() {
 
             {account_menu_open && (
               <div className="absolute right-0 mt-12 w-56 bg-white border rounded-lg shadow-xl z-50">
-                <button className="w-full text-left px-4 py-3 hover:bg-gray-100 transition-colors flex items-center gap-2 border-b">
+                <button
+                  onClick={() => {
+                    setter_selected_categories(null);
+                    setter_is_achievements(true);
+                    setter_account_menu_open(false);
+                  }}
+                  className="w-full text-left px-4 py-3 hover:bg-gray-100 transition-colors flex items-center gap-2 border-b">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
@@ -349,7 +336,8 @@ export default function Landing() {
             selected_category={selected_categories}
             setter_selected_note={setter_selected_note}
             setter_subjects={setter_subjects}
-            setter_selected_categories={setter_selected_categories}
+            setter_selected_categories={handleSetSelectedCategories}
+            is_achievements={is_achievements}
           />
         </div>
 

@@ -1,6 +1,6 @@
 import React from 'react';
-import Subjects from './subjects_tabs_groups_/Subjects';
-import Groups from './subjects_tabs_groups_/Groups';
+import Subjects from './subjects_groups_/Subjects';
+import Groups from './subjects_groups_/Groups';
 
 export default function SubjectsTagsGroupsBar({
   subjects,
@@ -27,9 +27,6 @@ export default function SubjectsTagsGroupsBar({
           setter_show_note_user={setter_show_note_user}
         />
       </div>
-
-
-
       <div className="bg-white rounded-lg shadow-sm border p-4">
         <Groups
           groups={groups || []}
