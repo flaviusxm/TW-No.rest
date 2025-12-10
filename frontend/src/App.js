@@ -132,9 +132,7 @@ useEffect(() => {
             }}
           />
 
-          <h1 className="text-2xl font-extrabold text-center mb-2 drop-shadow-sm">
-            RWS Productivity
-          </h1>
+          
           <p className="text-sm font-medium text-center opacity-90 max-w-xs">
             Stay organized. Stay focused. Achieve more with ease.
           </p>

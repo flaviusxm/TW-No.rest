@@ -218,10 +218,14 @@ export default function Groups({
             return (
               <li
                 key={gid}
-                className={`cursor-pointer px-3 py-2 rounded hover:bg-[#E3F0FF] transition-colors group flex justify-between items-center ${
-                  isSelected ? 'bg-[#4E8DC4] text-white' : ''
-                }`}
-                onClick={() => handler_clicked_group({ ...group, id: gid })}
+                className={`
+                  cursor-pointer px-3 py-2 rounded transition-colors group flex justify-between items-center
+                  ${isSelected
+                    ? 'bg-[#4E8DC4] text-white hover:bg-[#E3F0FF] hover:text-gray-900'
+                    : 'hover:bg-[#E3F0FF]'
+                  }
+                `}
+                onClick={() => handler_clicked_group({ ...group, id: gid, type: 'group' })}
               >
                 <span className="flex-1 truncate">{group.name}</span>
                 
@@ -234,9 +238,13 @@ export default function Groups({
 
                   <button
                     onClick={(e) => handler_delete_group(gid, e)}
-                    className={`p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity ${
-                        isSelected ? 'text-white hover:bg-blue-600' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
-                    }`}
+                    className={`
+                      p-1 rounded opacity-100 transition-colors
+                      ${isSelected
+                        ? 'text-white group-hover:text-red-500 hover:bg-red-100'
+                        : 'text-red-500 hover:text-red-600 hover:bg-red-50'
+                      }
+                    `}
                     title="Delete group"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
