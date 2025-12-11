@@ -2,6 +2,7 @@ const database = require('../models');
 const Note = database.notes;
 const Subject = database.subjects;
 const Tag = database.tags;
+
 exports.create_note = async (req, resp) => {
     try {
         const { title, subject_id, description = '', tag_id } = req.body;
@@ -23,6 +24,7 @@ exports.create_note = async (req, resp) => {
             user_id: req.user.user_id,
             course_date: new Date().toISOString().split('T')[0]
         });
+
         let assignedTagName = null;
         if (tag_id) {
             const tag = await Tag.findByPk(tag_id);
@@ -31,6 +33,7 @@ exports.create_note = async (req, resp) => {
                 assignedTagName = tag.name;
             }
         }
+
         resp.json({
             id: new_note.note_id,
             title: new_note.title,
@@ -38,8 +41,8 @@ exports.create_note = async (req, resp) => {
             markdown_content: new_note.markdown_content,
             subject_id: new_note.subject_id,
             subject_name: subject.name,
-            tag_id: tag_id,
-            tag_name: assignedTagName,
+            tag_id: tag_id || null,      // Returnam ID-ul
+            tag_name: assignedTagName,   // Returnam Numele Tag-ului
             course_date: new_note.course_date,
             created_at: new_note.created_at,
             updated_at: new_note.updated_at,
@@ -217,4 +220,3 @@ exports.delete_note = async (req, resp) => {
         resp.status(500).json({ err: err.message });
     }
 };
-

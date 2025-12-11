@@ -11,6 +11,13 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
     const saveTimer = useRef(null);
     const lastSavedState = useRef(null);
 
+    // Definirea textelor ajutatoare (Placeholder)
+    const tagPlaceholders = {
+        1: "Ce s-a predat la curs? Notează ideile principale...",
+        2: "Rezolvări de la seminar sau teme...",
+        3: "Alte informații utile, link-uri sau idei..."
+    };
+
     const subjectId = useMemo(() => selected_category?.id ?? selected_category?.subject_id, [selected_category]);
     useEffect(() => {
         const fetch_notes = async () => {
@@ -80,8 +87,8 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
                     ...new_note,
                     subject_id: subjectId,
                     subject_name: selected_category?.name,
-                    tag_id: default_tag_id,
-                    tag_name: "Seminar"
+                    tag_id: new_note.tag_id ? parseInt(new_note.tag_id) : default_tag_id,
+                    tag_name: new_note.tag_name // Luam tag-ul venit din backend
                 };
                 setter_notes(prev => [withSubject, ...prev]);
             }
@@ -147,9 +154,9 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
 
 
                     if (!tagName && updated.tag_id) {
-                        if (updated.tag_id === 1) tagName = "Curs";
+                        if (updated.tag_id === 1) tagName = "Course";
                         else if (updated.tag_id === 2) tagName = "Seminar";
-                        else if (updated.tag_id === 3) tagName = "Diverse";
+                        else if (updated.tag_id === 3) tagName = "Other";
                     }
 
                     const merged = {
@@ -250,7 +257,7 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
                             onChange={(e) => setCurrentNote(prev => ({ ...prev, markdown_content: e.target.value }))}
                             rows={16}
                             className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#4E8DC4] outline-none font-mono text-sm"
-                            placeholder="Start typing..."
+                            placeholder={tagPlaceholders[current_note.tag_id] || "Start typing..."}
                         />
                     </div>
                 </div>
