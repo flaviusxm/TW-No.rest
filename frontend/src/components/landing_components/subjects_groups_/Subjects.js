@@ -232,12 +232,12 @@ export default function Subjects({
               <li
                 key={sid}
                 className={`
-    cursor-pointer px-3 py-2 rounded transition-colors group flex justify-between items-center
-    ${isSelected
-                    ? 'bg-[#4E8DC4] text-white hover:bg-white hover:text-[#4E8DC4]'
-                    : 'hover:bg-[#E3F0FF]'
+                  cursor-pointer px-3 py-2 rounded transition-colors group flex justify-between items-center
+                  ${isSelected
+                      ? 'bg-[#4E8DC4] text-white hover:bg-[#E3F0FF] hover:text-gray-900'
+                      : 'hover:bg-[#E3F0FF]'
                   }
-  `}
+              `}
                 onClick={() => handler_clicked_subject({ ...subject, id: sid })}
               >
                 <span className="flex-1 truncate">{subject.name}</span>

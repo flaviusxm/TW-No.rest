@@ -11,6 +11,13 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
     const saveTimer = useRef(null);
     const lastSavedState = useRef(null);
 
+    // Definirea textelor ajutatoare (Placeholder)
+    const tagPlaceholders = {
+        1: "Ce s-a predat la curs? Notează ideile principale...",
+        2: "Rezolvări de la seminar sau teme...",
+        3: "Alte informații utile, link-uri sau idei..."
+    };
+
     const subjectId = useMemo(() => selected_category?.id ?? selected_category?.subject_id, [selected_category]);
     useEffect(() => {
         const fetch_notes = async () => {
@@ -80,8 +87,8 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
                     ...new_note,
                     subject_id: subjectId,
                     subject_name: selected_category?.name,
-                    tag_id: default_tag_id,
-                    tag_name: "Seminar"
+                    tag_id: new_note.tag_id ? parseInt(new_note.tag_id) : default_tag_id,
+                    tag_name: new_note.tag_name // Luam tag-ul venit din backend
                 };
                 setter_notes(prev => [withSubject, ...prev]);
             }
@@ -147,9 +154,9 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
 
 
                     if (!tagName && updated.tag_id) {
-                        if (updated.tag_id === 1) tagName = "Curs";
+                        if (updated.tag_id === 1) tagName = "Course";
                         else if (updated.tag_id === 2) tagName = "Seminar";
-                        else if (updated.tag_id === 3) tagName = "Diverse";
+                        else if (updated.tag_id === 3) tagName = "Other";
                     }
 
                     const merged = {
@@ -213,9 +220,9 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
                                 className="w-full text-lg border-b-2 border-gray-200 pb-2 bg-transparent focus:border-[#4E8DC4] outline-none cursor-pointer"
                             >
                                 <option value="">-- Select --</option>
-                                <option value="1">Curs</option>
+                                <option value="1">Course</option>
                                 <option value="2">Seminar</option>
-                                <option value="3">Diverse</option>
+                                <option value="3">Other</option>
                             </select>
                         </div>
                     </div>
@@ -250,7 +257,7 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
                             onChange={(e) => setCurrentNote(prev => ({ ...prev, markdown_content: e.target.value }))}
                             rows={16}
                             className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#4E8DC4] outline-none font-mono text-sm"
-                            placeholder="Start typing..."
+                            placeholder={tagPlaceholders[current_note.tag_id] || "Start typing..."}
                         />
                     </div>
                 </div>
@@ -263,34 +270,48 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
         <div className="flex-1 p-6 overflow-auto h-full">
             <div className="mb-6 flex justify-between items-start">
                 <div>
-                    <h2 className="text-xl font-bold text-gray-800">{selected_category.name}</h2>
+                <div className="flex items-center gap-3 mb-1">
+    <svg className="w-8 h-8 text-[#4E8DC4]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+    </svg>
+    <h2 className="text-xl font-bold text-gray-800">{selected_category.name}</h2>
+</div>
                     <p className="text-gray-500 text-sm">{visible_notes.length} notes</p>
                 </div>
                 {(() => {
-                    const tagOptions = [
-                        { id: 1, name: 'Curs', color: 'text-blue-600' },
-                        { id: 2, name: 'Seminar', color: 'text-blue-600' },
-                        { id: 3, name: 'Diverse', color: 'text-blue-600' }
-                    ];
+    const tagOptions = [
+        { id: 1, name: 'Course', color: 'text-blue-700' }, 
+        { id: 2, name: 'Seminar', color: 'text-blue-700' },
+        { id: 3, name: 'Other', color: 'text-blue-700' }
+    ];
 
-                    return (
-                        <div className="flex gap-4 mb-4 select-none">
-                            {tagOptions.map(opt => (
-                                <label key={opt.id} className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1 rounded border hover:border-blue-400 transition-colors">
-                                    <input
-                                        type="checkbox"
-                                        checked={tag_filters[opt.id]}
-                                        onChange={() => setter_tag_filters(prev => ({ ...prev, [opt.id]: !prev[opt.id] }))}
-                                        className="rounded text-[#4E8DC4] focus:ring-[#4E8DC4]"
-                                    />
-                                    <span className={`text-sm font-medium ${opt.color}`}>
-                                        {opt.name}
-                                    </span>
-                                </label>
-                            ))}
-                        </div>
-                    );
-                })()}
+    return (
+        <div className="flex gap-3 mb-4 select-none">
+            {tagOptions.map(opt => (
+                <label 
+                    key={opt.id} 
+                    className={`
+                        flex items-center gap-2 cursor-pointer 
+                        bg-blue-50 hover:bg-blue-100 
+                        px-4 py-2 rounded-2xl 
+                        border border-blue-200 hover:border-blue-300 
+                        transition-all shadow-sm
+                    `}
+                >
+                    <input
+                        type="checkbox"
+                        checked={tag_filters[opt.id]}
+                        onChange={() => setter_tag_filters(prev => ({ ...prev, [opt.id]: !prev[opt.id] }))}
+                        className="rounded text-[#4E8DC4] focus:ring-[#4E8DC4] w-4 h-4"
+                    />
+                    <span className={`text-sm font-semibold ${opt.color}`}>
+                        {opt.name}
+                    </span>
+                </label>
+            ))}
+        </div>
+    );
+})()}
                 <button onClick={handler_delete_subject} className="text-red-500 hover:bg-red-50 p-2 rounded" title="Delete Subject">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </button>
@@ -301,7 +322,7 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
                 disabled={creating_note}
                 className="mb-6 w-full py-2 bg-[#4E8DC4] text-white rounded-lg hover:bg-[#3b78a2] transition flex justify-center gap-2 items-center"
             >
-                {creating_note ? "Creating..." : "+ New Note"}
+                {creating_note ? "Creating..." : "New Note"}
             </button>
 
             {loading ? <p className="text-center text-gray-500">Loading notes...</p> : (
@@ -312,7 +333,12 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
                             <li key={noteId} onClick={() => handler_note_click(note)} className="bg-white p-4 rounded-lg shadow-sm border hover:border-[#4E8DC4] cursor-pointer group">
                                 <div className="flex justify-between items-start mb-2">
                                     <div className="flex-1">
-                                        <h3 className="font-semibold text-gray-800 mb-1">{note.title || 'Untitled'}</h3>
+                                    <div className="flex items-center gap-2 mb-1">
+                                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            <h3 className="font-semibold text-gray-800">{note.title || 'Untitled'}</h3>
+                                        </div>
                                         {note.description && <p className="text-sm text-gray-500 line-clamp-1">{note.description}</p>}
                                     </div>
 
@@ -358,7 +384,13 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
                     })}
                 </ul>
             )}
-            {notes.length === 0 && !loading && <div className="text-center text-gray-400 mt-10">No notes in this subject yet.</div>}
+            {notes.length === 0 && !loading && <div className="flex flex-col items-center justify-center mt-20 opacity-60 select-none">
+                            <svg className="w-24 h-24 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <p className="text-lg font-medium text-gray-400">No notes in this subject yet</p>
+                            <p className="text-sm text-gray-300">Create a new note to get started</p>
+                        </div>}
         </div>
     );
 }

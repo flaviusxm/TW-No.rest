@@ -310,10 +310,29 @@ export default function Landing() {
                     setter_account_menu_open(false);
                   }}
                   className="w-full text-left px-4 py-3 hover:bg-gray-100 transition-colors flex items-center gap-2 border-b">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  Achievements
+                 <svg 
+    className="w-5 h-5 text-yellow-500" 
+    fill="none" 
+    stroke="currentColor" 
+    viewBox="0 0 24 24" 
+    strokeWidth={2}
+  >
+    {/* Cupa */}
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15a7 7 0 007-7V4H5v4a7 7 0 007 7z" />
+    
+    {/* Piciorul */}
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v7" />
+    
+    {/* Baza LATA (modificat aici: M6 22h12 înseamnă că pleacă de la 6 și are lungime 12) */}
+    <path strokeLinecap="round" strokeLinejoin="round" d="M6 22h12" />
+    
+    {/* Toarta stanga */}
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5 4H4.5a2.5 2.5 0 000 5H5" />
+    
+    {/* Toarta dreapta */}
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19 4h.5a2.5 2.5 0 010 5H19" />
+  </svg>
+  <span className="text-gray-700">Achievements</span>
                 </button>
 
                 <button
