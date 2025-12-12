@@ -1,5 +1,6 @@
 const database_configuration=require('../config/db.config.js')
-const {Sequelize,DataTypes}=require('sequelize');
+const { Sequelize }=require('sequelize');
+const { DataTypes }=require('sequelize');
 const sequelize=new Sequelize(database_configuration.DB,database_configuration.USER,database_configuration.PASSWORD,{
     host:database_configuration.HOST,
     dialect:database_configuration.dialect,
@@ -9,6 +10,7 @@ const sequelize=new Sequelize(database_configuration.DB,database_configuration.U
         ssl:false
     }
 });
+
 const database={};
 database.Sequelize=Sequelize;
 database.sequelize=sequelize;
