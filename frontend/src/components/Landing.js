@@ -24,7 +24,7 @@ const getColorFromInitial = (initial) => {
 export default function Landing() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
+const [mobile_layout,set_mobile_layout]=useState(false);
   const [groups, setter_groups] = useState([]);
   const [subjects, setter_subjects] = useState([]);
 
@@ -49,6 +49,7 @@ export default function Landing() {
   const handleSetSelectedCategories = (val) => {
     setter_selected_categories(val);
     setter_is_achievements(false);
+    set_mobile_layout(false);
   };
 
   const navigate = useNavigate();
@@ -146,12 +147,29 @@ export default function Landing() {
   const avatar_color = getColorFromInitial(user_initial);
 
   return (
-    <div className="h-screen w-screen flex flex-row bg-[#f6f8fb] overflow-hidden">
+    <div className="h-screen w-screen flex flex-col lg:flex-row bg-[#f6f8fb] overflow-hidden relative">
+{
+  mobile_layout && (
+    <div className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+    onClick={()=>set_mobile_layout(false)}
+    />
+  )
+}
+  <div className={`fixed inset-y-0 left-0 z-50 w-72 lg:w-[20%] h-full flex flex-col border-r bg-white shadow-xl transition-transform duration-300 ease-in-out ${mobile_layout ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:translate-x-0 lg:block hover:bg-gradient-to-t hover:from-blue-50 hover:via-blue-25 hover:to-white`}>
+        
+        {/* Logo Area */}
+        <div className="w-full h-[7.5rem] border-b shadow-md flex items-center justify-center relative bg-white">
+          
+          <button 
+            onClick={() => set_mobile_layout(false)}
+            className="absolute top-4 right-4 p-2 lg:hidden text-gray-500 hover:text-red-500 focus:outline-none"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
 
-      {/*sidebar */}
-      <div className="w-[20%] h-full flex flex-col border-r bg-white hover:bg-gradient-to-t hover:from-blue-50 hover:via-blue-25 hover:to-white transition-all duration-2000 ease-in-out relative z-30 shadow-md">
-        <div className="w-full h-40 border-b border-gray-100 overflow-hidden">
-          <img src={rws_app_logo} className="w-full h-full object-cover scale-75" alt="logo" />
+          <img src={rws_app_logo} className="h-[60%] lg:h-[90%] object-contain" alt="logo" />
         </div>
 
         <div className='flex-1 overflow-y-auto p-4 custom-scrollbar'>
@@ -169,116 +187,22 @@ export default function Landing() {
       </div>
 
       {/* Header + Content */}
-      <div className="w-[80%] h-full flex flex-col relative">
+      <div className="w-full lg:w-[80%] h-full flex flex-col relative">
 
         {/* HEADER */}
-        <header className="flex items-center justify-between px-8 py-4 bg-white shadow-sm z-20 h-20">
+        <header className="flex items-center justify-between px-4 lg:px-8 py-4 bg-white shadow-md z-20 h-[5rem] lg:h-[7.5rem]">
 
-
-          <div className="w-10"></div>
-
-          {/* SEARCH + FILTER SECTION */}
-          <div className="flex justify-center relative">
-            <div className="relative flex items-center w-96">
-              <input
-                type="text"
-                placeholder="Search notes..."
-                className="w-full px-4 py-2 pr-10 rounded-lg shadow-xl 
-                              focus:outline-none focus:ring-2 focus:ring-[#4E8DC4] focus:border-[#4E8DC4]"
-              />
-
-              {/* Filter Icon Button */}
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`absolute right-2 p-1 rounded-md transition-colors ${showFilters ? 'bg-blue-100 text-[#4E8DC4]' : 'text-gray-400 hover:text-[#4E8DC4]'
-                  }`}
-                title="Advanced Filters"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
-                </svg>
-              </button>
-            </div>
-
-            {/* FILTER PANEL */}
-            {showFilters && (
-              <div className="absolute top-12 left-0 w-96 bg-white rounded-lg shadow-2xl border border-gray-100 p-5 animate-in fade-in slide-in-from-top-2 duration-200 z-50">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-700 text-sm">Advanced Filters</h3>
-                  <button
-                    onClick={() => setFilters({
-                      dateStart: '', dateEnd: '', scopeSubjects: true, scopeGroups: true, onlyWithTags: false, onlyShared: false
-                    })}
-                    className="text-xs text-[#4E8DC4] hover:underline"
-                  >
-                    Reset
-                  </button>
-                </div>
-
-                {/* Course Date Range */}
-                <div className="mb-4">
-                  <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Course Date</label>
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <span className="text-xs text-gray-400 block mb-1">From</span>
-                      <input
-                        type="date"
-                        name="dateStart"
-                        value={filters.dateStart}
-                        onChange={handleFilterChange}
-                        className="w-full text-sm border rounded px-2 py-1 focus:outline-none focus:border-[#4E8DC4]"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <span className="text-xs text-gray-400 block mb-1">To</span>
-                      <input
-                        type="date"
-                        name="dateEnd"
-                        value={filters.dateEnd}
-                        onChange={handleFilterChange}
-                        className="w-full text-sm border rounded px-2 py-1 focus:outline-none focus:border-[#4E8DC4]"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <hr className="my-3 border-gray-100" />
-
-                {/* Search Scope */}
-                <div className="mb-4">
-                  <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Search In</label>
-                  <div className="flex gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="scopeSubjects"
-                        checked={filters.scopeSubjects}
-                        onChange={handleFilterChange}
-                        className="accent-[#4E8DC4] w-4 h-4 rounded"
-                      />
-                      <span className="text-sm text-gray-700">Subjects</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="scopeGroups"
-                        checked={filters.scopeGroups}
-                        onChange={handleFilterChange}
-                        className="accent-[#4E8DC4] w-4 h-4 rounded"
-                      />
-                      <span className="text-sm text-gray-700">Groups</span>
-                    </label>
-                  </div>
-                </div>
-
-                <hr className="my-3 border-gray-100" />
-
-
-              </div>
-            )}
+          <div className="flex items-center">
+            <button 
+              onClick={() => set_mobile_layout(true)}
+              className="p-2 text-gray-600 rounded-md hover:bg-gray-100 lg:hidden focus:outline-none"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
           </div>
-
-          {/* USER MENU */}
+      
           <div className="flex justify-end relative">
             <button
               onClick={() => setter_account_menu_open(!account_menu_open)}
@@ -311,28 +235,19 @@ export default function Landing() {
                   }}
                   className="w-full text-left px-4 py-3 hover:bg-gray-100 transition-colors flex items-center gap-2 border-b">
                  <svg 
-    className="w-5 h-5 text-yellow-500" 
-    fill="none" 
-    stroke="currentColor" 
-    viewBox="0 0 24 24" 
-    strokeWidth={2}
-  >
-    {/* Cupa */}
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15a7 7 0 007-7V4H5v4a7 7 0 007 7z" />
-    
-    {/* Piciorul */}
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v7" />
-    
-    {/* Baza LATA (modificat aici: M6 22h12 înseamnă că pleacă de la 6 și are lungime 12) */}
-    <path strokeLinecap="round" strokeLinejoin="round" d="M6 22h12" />
-    
-    {/* Toarta stanga */}
-    <path strokeLinecap="round" strokeLinejoin="round" d="M5 4H4.5a2.5 2.5 0 000 5H5" />
-    
-    {/* Toarta dreapta */}
-    <path strokeLinecap="round" strokeLinejoin="round" d="M19 4h.5a2.5 2.5 0 010 5H19" />
-  </svg>
-  <span className="text-gray-700">Achievements</span>
+                    className="w-5 h-5 text-yellow-500" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24" 
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15a7 7 0 007-7V4H5v4a7 7 0 007 7z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v7" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 22h12" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 4H4.5a2.5 2.5 0 000 5H5" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 4h.5a2.5 2.5 0 010 5H19" />
+                  </svg>
+                  <span className="text-gray-700">Achievements</span>
                 </button>
 
                 <button
@@ -350,7 +265,7 @@ export default function Landing() {
         </header>
 
         {/* CONTENT */}
-        <div className="flex-1 p-4 overflow-auto bg-white hover:bg-gradient-to-t hover:from-blue-50 hover:via-blue-25 hover:to-white transition-all duration-2000 ease-in-out">
+        <div className="flex-1 p-2 lg:p-4 shadow-sm overflow-auto bg-white hover:bg-gradient-to-t hover:from-blue-50 hover:via-blue-25 hover:to-white transition-all duration-2000 ease-in-out">
           <ContentBar
             selected_category={selected_categories}
             setter_selected_note={setter_selected_note}

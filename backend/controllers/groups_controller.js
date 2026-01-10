@@ -48,35 +48,40 @@ exports.get_group_members = async (req, res) => {
         const group = await Group.findByPk(id, {
             include: [{
                 model: User,
-                attributes: ['user_id', 'name', 'email'], 
+                attributes: ['user_id', 'name', 'email'],
                 through: { attributes: [] }
             }]
         });
         if (!group) return res.status(404).send({ message: "Group not found" });
-        res.send(group.Users || group.users || []);
+
+        const members = group.Users || group.users || [];
+        console.log(`[GET_GROUP_MEMBERS] Group ${id} has ${members.length} members.`);
+        res.send(members);
     } catch (err) {
         console.error("Get Members Error:", err);
         res.status(500).send({ message: "Error fetching members" });
     }
 };
 
-// --- GET NOTES (AICI AM SIMPLIFICAT CA SA NU CRAPE) ---
+// --- GET NOTES ---
 exports.get_group_notes = async (req, res) => {
     const id = req.params.id;
     try {
         const group = await Group.findByPk(id, {
             include: [{
                 model: Note,
-                // Am scos include Tag pentru ca iti crăpa serverul
+
                 through: { attributes: [] }
             }]
         });
-        
+
         if (!group) return res.status(404).send({ message: "Group not found" });
-        
-        // Trimitem notitele simple. Frontend-ul tau DEJA stie sa puna eticheta "Curs/Seminar" 
-        // bazandu-se doar pe tag_id, deci va arata bine.
-        res.send(group.Notes || group.notes || []);
+
+        const notes = group.Notes || group.notes || [];
+        console.log(`[GET_GROUP_NOTES] Group ${id} has ${notes.length} notes.`);
+
+
+        res.send(notes);
     } catch (err) {
         console.error("Get Group Notes Error:", err);
         res.status(500).send({ message: "Error fetching notes" });
@@ -99,17 +104,31 @@ exports.get_group_count = async (req, res) => {
 exports.add_member = async (req, res) => {
     const groupId = req.params.id;
     const userId = req.body.userId;
+    console.log(`[ADD_MEMBER] Adding user ${userId} to group ${groupId}`);
     try {
         const group = await Group.findByPk(groupId);
         if (!group) return res.status(404).send({ message: "Group not found" });
 
-        if (group.addUser) await group.addUser(userId);
+        const user = await User.findByPk(userId);
+        if (!user) return res.status(404).send({ message: "User not found" });
+
+        // Check duplicate
+        if (group.hasUser) {
+            const has = await group.hasUser(user);
+            if (has) {
+                console.log(`[ADD_MEMBER] User ${userId} already in group ${groupId}`);
+                return res.status(400).send({ message: "User already in group" });
+            }
+        }
+
+        if (group.addUser) await group.addUser(user);
         else if (db.group_members) await db.group_members.create({ group_id: groupId, user_id: userId });
-        
+
+        console.log(`[ADD_MEMBER] Success`);
         res.send({ message: "Member added" });
     } catch (err) {
-        console.error(err);
-        res.status(500).send({ message: "Could not add member" });
+        console.error("[ADD_MEMBER] Error:", err);
+        res.status(500).send({ message: "Could not add member: " + err.message });
     }
 };
 
@@ -117,12 +136,17 @@ exports.add_member = async (req, res) => {
 exports.add_note = async (req, res) => {
     const groupId = req.params.id;
     const noteId = req.body.noteId;
-    const currentUserId = req.user ? req.user.user_id : null; 
+    const currentUserId = req.user ? req.user.user_id : null;
+
+    console.log(`[ADD_NOTE] Adding note ${noteId} to group ${groupId} by user ${currentUserId}`);
 
     if (!groupId || !noteId) return res.status(400).send({ message: "Missing IDs" });
     if (!currentUserId) return res.status(401).send({ message: "Unauthorized" });
 
     try {
+        const note = await Note.findByPk(noteId);
+        if (!note) return res.status(404).send({ message: "Note not found" });
+
         const existing = await GroupNote.findOne({ where: { group_id: groupId, note_id: noteId } });
         if (existing) return res.status(400).send({ message: "Note exists in group" });
 
@@ -131,9 +155,10 @@ exports.add_note = async (req, res) => {
             note_id: noteId,
             shared_by: currentUserId
         });
+        console.log(`[ADD_NOTE] Success`);
         res.send({ message: "Note shared!" });
     } catch (err) {
-        console.error(err);
+        console.error("[ADD_NOTE] Error:", err);
         res.status(500).send({ message: err.message });
     }
 };

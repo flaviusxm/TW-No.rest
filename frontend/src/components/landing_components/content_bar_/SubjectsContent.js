@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 export default function SubjectsContent({ selected_category, setter_subjects, setter_selected_categories }) {
 
@@ -88,7 +89,7 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
                     subject_id: subjectId,
                     subject_name: selected_category?.name,
                     tag_id: new_note.tag_id ? parseInt(new_note.tag_id) : default_tag_id,
-                    tag_name: new_note.tag_name // Luam tag-ul venit din backend
+                    tag_name: new_note.tag_name
                 };
                 setter_notes(prev => [withSubject, ...prev]);
             }
@@ -184,29 +185,30 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
 
 
     //edit_view
+    //edit_view
     if (current_note) {
         return (
-            <div className="flex-1 p-6 overflow-auto h-full">
-                <button onClick={() => setCurrentNote(null)} className="mb-4 px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded flex items-center gap-1">
+            <div className="flex-1 p-4 lg:p-6 overflow-auto h-full flex flex-col">
+                <button onClick={() => setCurrentNote(null)} className="mb-4 w-fit px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded flex items-center gap-1">
                     ← Back to List
                 </button>
 
-                <div className="bg-white rounded-lg shadow-sm border p-6 space-y-6">
-                    {/* Header */}
-                    <div className="flex gap-6 items-end">
+                <div className="bg-white rounded-lg shadow-sm border p-4 lg:p-6 space-y-4 lg:space-y-6 flex-1 flex flex-col">
+                    {/* Header: Title + Tag */}
+                    <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 lg:items-end">
                         <div className="flex-1">
                             <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
                             <input
                                 type="text"
                                 value={current_note.title || ''}
                                 onChange={(e) => setCurrentNote(prev => ({ ...prev, title: e.target.value }))}
-                                className="w-full text-2xl font-bold border-b-2 border-gray-200 focus:border-[#4E8DC4] outline-none pb-2"
+                                className="w-full text-xl lg:text-2xl font-bold border-b-2 border-gray-200 focus:border-[#4E8DC4] outline-none pb-2"
                                 placeholder="Note title..."
                             />
                         </div>
 
-                        {/* selector */}
-                        <div className="w-1/4 min-w-[150px]">
+                        {/* Selector Tag */}
+                        <div className="w-full lg:w-1/4 lg:min-w-[150px]">
                             <label className="block text-sm font-medium text-gray-700 mb-1">Tag</label>
                             <select
                                 value={current_note.tag_id || ""}
@@ -227,8 +229,8 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
                         </div>
                     </div>
 
-                    {/* Metadata */}
-                    <div className="flex gap-4">
+                    {/* Metadata: Description + Date (AICI ERA GREȘEALA) */}
+                    <div className="flex flex-col lg:flex-row gap-4">
                         <div className="flex-1">
                             <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                             <input
@@ -236,9 +238,10 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
                                 value={current_note.description || ''}
                                 onChange={(e) => setCurrentNote(prev => ({ ...prev, description: e.target.value }))}
                                 className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#4E8DC4] outline-none"
+                                placeholder="Short description..."
                             />
                         </div>
-                        <div className="w-48">
+                        <div className="w-full lg:w-48">
                             <label className="block text-sm font-medium text-gray-700 mb-1">Course Date</label>
                             <input
                                 type="date"
@@ -249,132 +252,139 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
                         </div>
                     </div>
 
-                    {/* Content */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Content</label>
+                    {/* Content: Editor + Preview */}
+                    <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-[500px]">
+                        {/* Text Area */}
                         <textarea
                             value={current_note.markdown_content || ''}
                             onChange={(e) => setCurrentNote(prev => ({ ...prev, markdown_content: e.target.value }))}
-                            rows={16}
-                            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#4E8DC4] outline-none font-mono text-sm"
+                            className="w-full lg:w-1/2 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#4E8DC4] outline-none font-mono text-sm h-[300px] lg:h-auto resize-none"
                             placeholder={tagPlaceholders[current_note.tag_id] || "Start typing..."}
                         />
+
+                        {/* Preview Area */}
+                        <div className="w-full lg:w-1/2 p-4 border rounded-lg bg-gray-50 overflow-auto h-[300px] lg:h-auto prose prose-sm max-w-none">
+                            <ReactMarkdown>
+                                {(current_note.markdown_content || "Live preview...").replace(/\r\n/g, '\n')}
+                            </ReactMarkdown>
+                        </div>
                     </div>
+
                 </div>
             </div>
         );
     }
-
     //list_notes_view
     return (
-        <div className="flex-1 p-6 overflow-auto h-full">
-            <div className="mb-6 flex justify-between items-start">
-                <div>
-                <div className="flex items-center gap-3 mb-1">
-    <svg className="w-8 h-8 text-[#4E8DC4]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-    </svg>
-    <h2 className="text-xl font-bold text-gray-800">{selected_category.name}</h2>
-</div>
-                    <p className="text-gray-500 text-sm">{visible_notes.length} notes</p>
-                </div>
-                {(() => {
-    const tagOptions = [
-        { id: 1, name: 'Course', color: 'text-blue-700' }, 
-        { id: 2, name: 'Seminar', color: 'text-blue-700' },
-        { id: 3, name: 'Other', color: 'text-blue-700' }
-    ];
+        <div className="flex-1 p-4 lg:p-6 overflow-auto h-full flex flex-col">
 
-    return (
-        <div className="flex gap-3 mb-4 select-none">
-            {tagOptions.map(opt => (
-                <label 
-                    key={opt.id} 
-                    className={`
-                        flex items-center gap-2 cursor-pointer 
-                        bg-blue-50 hover:bg-blue-100 
-                        px-4 py-2 rounded-2xl 
-                        border border-blue-200 hover:border-blue-300 
-                        transition-all shadow-sm
-                    `}
-                >
-                    <input
-                        type="checkbox"
-                        checked={tag_filters[opt.id]}
-                        onChange={() => setter_tag_filters(prev => ({ ...prev, [opt.id]: !prev[opt.id] }))}
-                        className="rounded text-[#4E8DC4] focus:ring-[#4E8DC4] w-4 h-4"
-                    />
-                    <span className={`text-sm font-semibold ${opt.color}`}>
-                        {opt.name}
-                    </span>
-                </label>
-            ))}
-        </div>
-    );
-})()}
-                <button onClick={handler_delete_subject} className="text-red-500 hover:bg-red-50 p-2 rounded" title="Delete Subject">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                </button>
+
+            <div className="mb-6 flex flex-col lg:flex-row lg:items-end justify-between gap-4 border-b pb-4">
+
+
+                <div className="w-full lg:w-auto">
+                    <div className="flex items-center gap-3 mb-1">
+                        {/* Icon */}
+                        <svg className="w-8 h-8 text-[#4E8DC4] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                        </svg>
+
+                        {/* Titlu */}
+                        <h2 className="text-xl font-bold text-gray-800 break-all">{selected_category?.name}</h2>
+
+
+                        <button
+                            onClick={handler_delete_subject}
+                            className="text-red-500 hover:bg-red-50 p-1 rounded ml-2 transition-colors shrink-0 z-10"
+                            title="Delete Subject"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
+                    {/* Counter Note */}
+                    <p className="text-gray-500 text-sm ml-11">{visible_notes.length} notes</p>
+                </div>
+
+
+                <div className="flex flex-wrap gap-2 select-none">
+                    {[
+                        { id: 1, name: 'Course', color: 'text-blue-700' },
+                        { id: 2, name: 'Seminar', color: 'text-blue-700' },
+                        { id: 3, name: 'Other', color: 'text-blue-700' }
+                    ].map(opt => (
+                        <label
+                            key={opt.id}
+                            className={`
+                                flex items-center gap-2 cursor-pointer 
+                                bg-blue-50 hover:bg-blue-100 
+                                px-4 py-2 rounded-full 
+                                border border-blue-200 hover:border-blue-300 
+                                transition-all shadow-sm
+                            `}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={tag_filters[opt.id]}
+                                onChange={() => setter_tag_filters(prev => ({ ...prev, [opt.id]: !prev[opt.id] }))}
+                                className="rounded text-[#4E8DC4] focus:ring-[#4E8DC4] w-4 h-4"
+                            />
+                            <span className={`text-sm font-semibold ${opt.color}`}>
+                                {opt.name}
+                            </span>
+                        </label>
+                    ))}
+                </div>
             </div>
 
+            {/* Buton New Note */}
             <button
                 onClick={handler_create_note}
                 disabled={creating_note}
-                className="mb-6 w-full py-2 bg-[#4E8DC4] text-white rounded-lg hover:bg-[#3b78a2] transition flex justify-center gap-2 items-center"
+                className="mb-6 w-full py-2 bg-[#4E8DC4] text-white rounded-lg hover:bg-[#3b78a2] transition flex justify-center gap-2 items-center shadow-md"
             >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                 {creating_note ? "Creating..." : "New Note"}
             </button>
 
-            {loading ? <p className="text-center text-gray-500">Loading notes...</p> : (
-                <ul className="space-y-3">
+            {/* Lista Notite */}
+            {loading ? <p className="text-center text-gray-500 mt-10">Loading notes...</p> : (
+                <ul className="space-y-3 pb-10">
                     {visible_notes.map(note => {
                         const noteId = note.id ?? note.note_id;
                         return (
-                            <li key={noteId} onClick={() => handler_note_click(note)} className="bg-white p-4 rounded-lg shadow-sm border hover:border-[#4E8DC4] cursor-pointer group">
+                            <li key={noteId} onClick={() => handler_note_click(note)} className="bg-white p-4 rounded-lg shadow-sm border hover:border-[#4E8DC4] cursor-pointer group transition-all">
                                 <div className="flex justify-between items-start mb-2">
-                                    <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
-                                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div className="flex-1 overflow-hidden">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <svg className="w-5 h-5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                             </svg>
-                                            <h3 className="font-semibold text-gray-800">{note.title || 'Untitled'}</h3>
+                                            <h3 className="font-semibold text-gray-800 line-clamp-1">{note.title || 'Untitled'}</h3>
                                         </div>
-                                        {note.description && <p className="text-sm text-gray-500 line-clamp-1">{note.description}</p>}
+                                        {note.description && <p className="text-sm text-gray-500 line-clamp-1 ml-7">{note.description}</p>}
                                     </div>
 
-
-                                    <button onClick={(e) => handler_delete_note(noteId, e)} className="text-red-500 hover:bg-red-50 p-1 rounded ml-2 transition-colors">
+                                    <button onClick={(e) => handler_delete_note(noteId, e)} className="text-red-500 hover:bg-red-50 p-1 rounded ml-2 transition-colors shrink-0 z-10">
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                     </button>
                                 </div>
 
-                                {/* footer*/}
                                 <div className="mt-2 pt-2 border-t flex items-center justify-between text-xs text-gray-500">
-
-                                    {/* stanga */}
                                     <div className="flex items-center gap-3">
-                                        {note.tag_name ? (
+                                        {note.tag_name && (
                                             <span className="bg-blue-100 text-[#4E8DC4] px-2 py-0.5 rounded-full border border-blue-200 font-medium">
                                                 {note.tag_name}
                                             </span>
-                                        ) : null}
-
-                                        {/* data curs */}
+                                        )}
                                         <span className="flex items-center gap-1">
-                                            {note.course_date ? (
-                                                <>
-                                                    <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                                    <span className={note.course_date ? "text-gray-700" : "italic text-gray-400"}>
-                                                        {note.course_date}
-                                                    </span>
-                                                </>
-                                            ) : (
-                                                <span className="italic text-gray-300">No date</span>
-                                            )}
+                                            <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                            <span className={note.course_date ? "text-gray-700" : "italic text-gray-400"}>
+                                                {note.course_date || "No date"}
+                                            </span>
                                         </span>
                                     </div>
-
-                                    {/* dreapta */}
                                     <span className="text-gray-400">
                                         {new Date(note.updated_at).toLocaleDateString()}
                                     </span>
@@ -384,13 +394,16 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
                     })}
                 </ul>
             )}
-            {notes.length === 0 && !loading && <div className="flex flex-col items-center justify-center mt-20 opacity-60 select-none">
-                            <svg className="w-24 h-24 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            <p className="text-lg font-medium text-gray-400">No notes in this subject yet</p>
-                            <p className="text-sm text-gray-300">Create a new note to get started</p>
-                        </div>}
+
+            {notes.length === 0 && !loading && (
+                <div className="flex flex-col items-center justify-center mt-20 opacity-60 select-none">
+                    <svg className="w-24 h-24 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p className="text-lg font-medium text-gray-400">No notes in this subject yet</p>
+                    <p className="text-sm text-gray-300">Create a new note to get started</p>
+                </div>
+            )}
         </div>
     );
 }

@@ -5,7 +5,7 @@ export default function GroupsContent({ selected_group }) {
     const [groupNotes, setGroupNotes] = useState([]);
     const [groupMembers, setGroupMembers] = useState([]);
     const [loading, setLoading] = useState(false);
-    
+
     // --- STATE EDITOR ---
     const [current_note, setCurrentNote] = useState(null);
     const saveTimer = useRef(null);
@@ -44,7 +44,7 @@ export default function GroupsContent({ selected_group }) {
                 const notesList = Array.isArray(data) ? data : (data.notes || []);
                 setGroupNotes(notesList);
             }
-            
+
             // Fetch Membri
             const membersResp = await fetch(`http://localhost:5019/groups/${groupId}/members`, { credentials: "include" });
             if (membersResp.ok) {
@@ -79,7 +79,7 @@ export default function GroupsContent({ selected_group }) {
     const handler_delete_note = async (noteId, e) => {
         e.stopPropagation();
         if (!window.confirm("Esti sigur ca vrei sa stergi notita?")) return;
-        
+
         try {
             const resp = await fetch(`http://localhost:5019/notes/${noteId}`, { method: "DELETE", credentials: "include" });
             if (resp.ok) {
@@ -115,7 +115,12 @@ export default function GroupsContent({ selected_group }) {
             method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: uId })
         });
-        if (res.ok) { setShowMemberModal(false); setSearchTerm(''); refreshGroupData(); alert("Membru adaugat!"); }
+        if (res.ok) {
+            setShowMemberModal(false); setSearchTerm(''); refreshGroupData(); alert("Membru adaugat!");
+        } else {
+            const err = await res.json();
+            alert("Eroare: " + (err.message || "Nu s-a putut adauga membrul"));
+        }
     };
 
     const handleShareNote = async (note) => {
@@ -124,7 +129,12 @@ export default function GroupsContent({ selected_group }) {
             method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ noteId: nId })
         });
-        if (res.ok) { setShowNoteModal(false); refreshGroupData(); alert("Notita partajata!"); }
+        if (res.ok) {
+            setShowNoteModal(false); refreshGroupData(); alert("Notita partajata!");
+        } else {
+            const err = await res.json();
+            alert("Eroare: " + (err.message || "Nu s-a putut partaja notita"));
+        }
     };
 
     // Search logic
@@ -151,47 +161,46 @@ export default function GroupsContent({ selected_group }) {
     // ================= VIEW: EDITOR =================
     if (current_note) {
         return (
-            <div className="flex-1 p-6 bg-[#f8fbff] h-full overflow-hidden flex flex-col">
+            <div className="flex-1 p-4 lg:p-6 h-full overflow-hidden flex flex-col">
                 <button onClick={() => setCurrentNote(null)} className="mb-4 px-3 py-1 bg-gray-200 rounded w-fit text-sm hover:bg-gray-300 flex items-center gap-1">← Back to Group</button>
-                <div className="bg-white p-6 rounded-lg shadow-sm border h-full flex flex-col gap-6">
-                    <div className="flex gap-6 items-end">
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                            <input className="w-full text-2xl font-bold border-b-2 border-gray-200 focus:border-[#4E8DC4] outline-none pb-2" value={current_note.title} onChange={e => setCurrentNote({...current_note, title: e.target.value})} placeholder="Title..." />
-                        </div>
-                        <div className="w-1/4 min-w-[150px]">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Tag (Context)</label>
-                            <select 
-                                value={current_note.tag_id || ""} 
-                                onChange={e => setCurrentNote({...current_note, tag_id: e.target.value ? parseInt(e.target.value) : null})} 
-                                className={`w-full text-lg border-b-2 pb-2 bg-transparent outline-none cursor-pointer font-semibold
+                <div className="bg-white p-4 lg:p-6 rounded-lg shadow-sm border h-full flex flex-col gap-4 lg:gap-6 overflow-y-auto">                    <div className="flex gap-6 items-end">
+                    <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                        <input className="w-full text-2xl font-bold border-b-2 border-gray-200 focus:border-[#4E8DC4] outline-none pb-2" value={current_note.title} onChange={e => setCurrentNote({ ...current_note, title: e.target.value })} placeholder="Title..." />
+                    </div>
+                    <div className="w-1/4 min-w-[150px]">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Tag (Context)</label>
+                        <select
+                            value={current_note.tag_id || ""}
+                            onChange={e => setCurrentNote({ ...current_note, tag_id: e.target.value ? parseInt(e.target.value) : null })}
+                            className={`w-full text-lg border-b-2 pb-2 bg-transparent outline-none cursor-pointer font-semibold
                                     ${current_note.tag_id == 1 ? 'text-blue-600 border-blue-200' : ''}
                                     ${current_note.tag_id == 2 ? 'text-green-600 border-green-200' : ''}
                                     ${current_note.tag_id == 3 ? 'text-gray-600 border-gray-200' : ''}
                                 `}
-                            >
-                                <option value="">-- Select --</option>
-                                <option value="1">Course</option>
-                                <option value="2">Seminar</option>
-                                <option value="3">Other</option>
-                            </select>
-                        </div>
+                        >
+                            <option value="">-- Select --</option>
+                            <option value="1">Course</option>
+                            <option value="2">Seminar</option>
+                            <option value="3">Other</option>
+                        </select>
                     </div>
-                    <div className="flex gap-4">
+                </div>
+                    <div className="flex flex-col lg:flex-row gap-4">
                         <div className="flex-1">
                             <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                            <input type="text" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#4E8DC4] outline-none" value={current_note.description || ''} onChange={e => setCurrentNote({...current_note, description: e.target.value})} />
+                            <input type="text" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#4E8DC4] outline-none" value={current_note.description || ''} onChange={e => setCurrentNote({ ...current_note, description: e.target.value })} />
                         </div>
-                        <div className="w-48">
+                        <div className="w-full lg:w-48">
                             <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                            <input type="date" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#4E8DC4] outline-none" value={current_note.course_date || ''} onChange={e => setCurrentNote({...current_note, course_date: e.target.value})} />
+                            <input type="date" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#4E8DC4] outline-none" value={current_note.course_date || ''} onChange={e => setCurrentNote({ ...current_note, course_date: e.target.value })} />
                         </div>
                     </div>
-                    <textarea 
-                        className="flex-1 w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#4E8DC4] outline-none font-mono text-sm resize-none" 
-                        value={current_note.markdown_content || ''} 
-                        onChange={e => setCurrentNote({...current_note, markdown_content: e.target.value})} 
-                        placeholder={tagPlaceholders[current_note.tag_id] || "Start typing..."} 
+                    <textarea
+                        className="flex-1 w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#4E8DC4] outline-none font-mono text-sm resize-none min-h-[300px]"
+                        value={current_note.markdown_content || ''}
+                        onChange={e => setCurrentNote({ ...current_note, markdown_content: e.target.value })}
+                        placeholder={tagPlaceholders[current_note.tag_id] || "Start typing..."}
                     />
                 </div>
             </div>
@@ -200,19 +209,18 @@ export default function GroupsContent({ selected_group }) {
 
     // ================= VIEW: LISTA NOTITE =================
     return (
-        <div className="flex-1 p-6 overflow-auto h-full relative bg-[#f8fbff]">
+        <div className="flex-1 p-4 lg:p-6 overflow-auto h-full relative ">
             {/* Header */}
-            <div className="mb-6 border-b pb-4 flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                    <svg className="w-8 h-8 text-[#4E8DC4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                    <div>
-                        <h2 className="text-2xl font-bold text-gray-800">{selected_group.name}</h2>
-                        <p className="text-xs text-gray-500">{groupMembers.length} Members</p>
-                    </div>
+            <div className="mb-6 border-b pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">                <div className="flex items-center gap-3">
+                <svg className="w-8 h-8 text-[#4E8DC4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                <div>
+                    <h2 className="text-2xl font-bold text-gray-800">{selected_group.name}</h2>
+                    <p className="text-xs text-gray-500">{groupMembers.length} Members</p>
                 </div>
-                <div className="flex gap-2">
-                    <button onClick={() => setShowMemberModal(true)} className="px-3 py-1.5 bg-blue-600 text-white rounded shadow text-sm hover:bg-blue-700 transition flex items-center gap-1">Add Members</button>
-                    <button onClick={() => { setShowNoteModal(true); fetchPersonalNotes(); }} className="px-3 py-1.5 bg-green-600 text-white rounded shadow text-sm hover:bg-green-700 transition flex items-center gap-1">Add Notes</button>
+            </div>
+                <div className="flex gap-2 w-full sm:w-auto">
+                    <button onClick={() => setShowMemberModal(true)} className="px-3 py-1.5  text-white rounded shadow bg-[#4E8DC4] text-white rounded-lg hover:bg-[#3b78a2] transition flex items-center gap-1">Add Members</button>
+                    <button onClick={() => { setShowNoteModal(true); fetchPersonalNotes(); }} className="px-3 py-1.5 text-white rounded shadow bg-[#4E8DC4] text-white rounded-lg hover:bg-[#3b78a2] transition flex items-center gap-1">Add Notes</button>
                 </div>
             </div>
 
@@ -226,12 +234,12 @@ export default function GroupsContent({ selected_group }) {
                         <p className="text-sm text-gray-300">Add a note to start collaborating</p>
                     </div>
                 ) : (
-                    <ul className="space-y-3">
+                    <ul className="space-y-3 pb-10">
                         {groupNotes.map(note => {
                             if (!note) return null;
                             const noteId = note.id ?? note.note_id;
-                            
-                            // --- CALCULAM NUMELE TAG-ULUI PENTRU AFISARE IN LISTA ---
+
+
                             let displayTagName = note.tag_name;
                             if (!displayTagName && note.tag_id) {
                                 const tid = parseInt(note.tag_id);
@@ -245,7 +253,7 @@ export default function GroupsContent({ selected_group }) {
                                     <div className="flex justify-between items-start mb-2">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-1">
-                                                {/* ICONITA IN FUNCTIE DE TAG */}
+
                                                 {note.tag_id == 1 ? (
                                                     <span title="Curs">🎓</span>
                                                 ) : note.tag_id == 2 ? (
@@ -257,18 +265,18 @@ export default function GroupsContent({ selected_group }) {
                                             </div>
                                             {note.description && <p className="text-sm text-gray-500 line-clamp-1">{note.description}</p>}
                                         </div>
-                                        
-                                        {/* BUTON STERGE - VIZIBIL TOT TIMPUL */}
-                                        <button onClick={(e) => handler_delete_note(noteId, e)} className="text-red-500 hover:bg-red-50 p-1 rounded ml-2 transition-colors">
+
+
+                                        <button onClick={(e) => handler_delete_note(noteId, e)} className="text-red-500 hover:bg-red-50 p-1 rounded ml-2 transition-colors shrink-0">
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                         </button>
                                     </div>
 
-                                    {/* FOOTER */}
+
                                     <div className="mt-2 pt-2 border-t flex items-center justify-between text-xs text-gray-500">
                                         <div className="flex items-center gap-3">
-                                            
-                                            {/* BADGE TAG - AICI IL AFISEAZA */}
+
+
                                             {displayTagName && (
                                                 <span className={`px-2 py-0.5 rounded-full border font-medium
                                                     ${displayTagName === "Course" || parseInt(note.tag_id) === 1 ? 'bg-blue-100 text-blue-700 border-blue-200' : ''}
@@ -307,16 +315,16 @@ export default function GroupsContent({ selected_group }) {
                 )
             )}
 
-            {/* MODALELE AU RAMAS NESCHIMBATE */}
+
             {showMemberModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white p-6 rounded-xl w-full max-w-md relative">
+                <div className="fixed inset-0  z-50 flex items-center justify-center p-4">
+                    <div className=" p-6 rounded-xl w-full max-w-md relative">
                         <button onClick={() => setShowMemberModal(false)} className="absolute top-4 right-4 text-gray-400">✕</button>
                         <h3 className="font-bold mb-4">Add Member</h3>
                         <input className="w-full border p-2 rounded mb-2" placeholder="Search..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                         <div className="max-h-40 overflow-auto">
                             {searchResults.map(user => (
-                                <div key={user.id || user.user_id} className="flex justify-between p-2 hover:bg-gray-50">
+                                <div key={user.id || user.user_id} className="flex justify-between p-2 ">
                                     <span>{user.name}</span>
                                     <button onClick={() => handleAddMember(user)} className="text-blue-600 font-bold">Add</button>
                                 </div>
@@ -326,13 +334,13 @@ export default function GroupsContent({ selected_group }) {
                 </div>
             )}
             {showNoteModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white p-6 rounded-xl w-full max-w-lg relative">
+                <div className="fixed inset-0  z-50 flex items-center justify-center p-4">
+                    <div className=" p-6 rounded-xl w-full max-w-lg relative">
                         <button onClick={() => setShowNoteModal(false)} className="absolute top-4 right-4 text-gray-400">✕</button>
                         <h3 className="font-bold mb-4">Share Note</h3>
                         <div className="max-h-60 overflow-auto">
                             {personalNotes.map(n => (
-                                <div key={n.id} onClick={() => handleShareNote(n)} className="p-2 border-b cursor-pointer hover:bg-gray-50 flex justify-between">
+                                <div key={n.id} onClick={() => handleShareNote(n)} className="p-2 border-b cursor-pointer  flex justify-between">
                                     <span>{n.title}</span>
                                     <span className="text-xs text-gray-400">Select</span>
                                 </div>

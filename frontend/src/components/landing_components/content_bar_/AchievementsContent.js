@@ -64,6 +64,47 @@ const badgeImages = {
     infinity_gauntlet: infinityGauntletImg
 };
 
+const badgeDescriptions = {
+  rookie: "Created your first 10 notes.",
+  scribe: "Created 50 notes.",
+  scholar: "Created 100 notes.",
+
+  wordsmith: "Wrote more than 10,000 words.",
+  novel_writer: "Wrote more than 50,000 words.",
+  the_architect: "Created a note with over 2000 words.",
+
+  the_perfectionist: "Edited your notes at least 10 times.",
+  minimalist: "Created a note with a title but no content.",
+  spring_cleaner: "Deleted an old note.",
+
+  time_traveler: "Created a note with a future date.",
+  daily_chronicler: "Created one note per day for 7 days.",
+  marathon_runner: "Created one note per day for 30 days.",
+  night_owl: "Created 5 notes between 00:00 and 05:00.",
+  early_bird: "Created 5 notes between 05:00 and 08:00.",
+
+  the_pioneer: "Created your first subject.",
+  polymath: "Created notes across 10 different subjects.",
+  deep_diver: "One of your subjects has over 50 notes.",
+
+  the_tagger: "Created 20 tags.",
+  the_connector: "Used one tag on at least 5 notes.",
+
+  resource_gatherer: "Attached over 50 files.",
+  visual_learner: "Attached 10 images.",
+  the_streamer: "Attached 10 videos.",
+  researcher: "Attached 10 PDF files.",
+  multimedia_master: "A note contains a PDF, video, and image.",
+
+  the_founder: "Created your first group.",
+  community_leader: "Created 5 groups.",
+  squad_goals: "One of your groups has at least 10 members.",
+
+  full_stack: "Created a subject, a tag, a group, and a note.",
+  open_source: "Shared 10 notes.",
+  
+  infinity_gauntlet: "Unlocked all other 29 achievements."
+};
 export default function AchievementsContent() {
 
     const [achievements, setAchievements] = useState([]);
@@ -97,12 +138,14 @@ export default function AchievementsContent() {
     }, []);
 
     return (
-        <div className="flex-1 p-6 overflow-auto h-full bg-gray-50">
+       <div className="flex-1 p-4 lg:p-6 overflow-auto h-full">
 
+            
             <div className="mb-6 border-b pb-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg text-yellow-500">
+                        <div className="p-2 rounded-lg text-yellow-500 bg-yellow-50 shrink-0">
                             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 15a7 7 0 007-7V4H5v4a7 7 0 007 7z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v7" />
@@ -112,13 +155,13 @@ export default function AchievementsContent() {
                             </svg>
                         </div>
                         <div>
-                            <h2 className="text-2xl font-bold text-gray-800">Your Achievements</h2>
+                            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Your Achievements</h2>
                             <p className="text-sm text-gray-500">Collect them all to become a master!</p>
                         </div>
                     </div>
 
-                    <div className="flex gap-3">
-                        <div className="px-4 py-2 rounded-lg bg-white border text-sm text-gray-600 font-medium shadow-sm">
+                    <div className="flex gap-3 w-full sm:w-auto">
+                        <div className="w-full sm:w-auto text-center px-4 py-2 rounded-lg bg-white border text-sm text-gray-600 font-medium shadow-sm">
                             {achievements.filter(a => a.unlocked).length} / {achievements.length} Unlocked
                         </div>
                     </div>
@@ -151,9 +194,9 @@ export default function AchievementsContent() {
                                 {ach.title}
                             </h4>
 
-                            <p className="text-xs text-gray-500 mb-2 h-8 line-clamp-2 px-1 flex items-center justify-center">
-                                {ach.description}
-                            </p>
+                           <p className="text-xs text-gray-500 mb-2 h-8 line-clamp-2 px-1 flex items-center justify-center">
+                {badgeDescriptions[ach.id]}
+            </p>
 
                             <div className="mt-auto w-full pt-2 border-t border-gray-100 flex justify-center">
                                 {ach.unlocked ? (
