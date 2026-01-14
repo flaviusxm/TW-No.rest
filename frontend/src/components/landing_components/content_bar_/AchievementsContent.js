@@ -145,7 +145,7 @@ export default function AchievementsContent() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg text-yellow-500 bg-yellow-50 shrink-0">
+                        <div className="p-2 rounded-lg text-yellow-500 shrink-0">
                             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 15a7 7 0 007-7V4H5v4a7 7 0 007 7z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v7" />
