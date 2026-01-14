@@ -9,6 +9,8 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
     const [current_note, setCurrentNote] = useState(null);
     const [deletingNoteId, setDeletingNoteId] = useState(null);
     const [tag_filters, setter_tag_filters] = useState({ 1: true, 2: true, 3: true });
+    const [attachments, setAttachments] = useState([]);
+    const [viewMode, setViewMode] = useState("edit");
     const saveTimer = useRef(null);
     const lastSavedState = useRef(null);
 
@@ -64,346 +66,421 @@ export default function SubjectsContent({ selected_category, setter_subjects, se
             console.error("Eroare la click notita:", err);
         }
     };
-
-    const handler_create_note = async () => {
-        setter_creating_note(true);
+    const handler_upload_file = async (e) => {
+        if (!e.target.files || !e.target.files[0]) return;
+        const file = e.target.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
         try {
-            const default_tag_id = 2;
-            const resp = await fetch('http://localhost:5019/notes', {
+            const resp = await fetch('http://localhost:5019/notes/attachments', {
                 method: 'POST',
+                credentials: 'include',
+                body: formData
+            })
+            if (resp.ok) {
+                const new_attachment = await resp.json();
+                setAttachments(prev => [...prev, new_attachment]);
+            } else {
+                console.error("Uploading file failed!");
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    ;
+}
+const handler_create_note = async () => {
+    setter_creating_note(true);
+    try {
+        const default_tag_id = 2;
+        const resp = await fetch('http://localhost:5019/notes', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: 'New Note',
+                subject_id: subjectId,
+                description: '',
+                markdown_content: '',
+                tag_id: default_tag_id
+            })
+        });
+
+        if (resp.ok) {
+            const new_note = await resp.json();
+            const withSubject = {
+                ...new_note,
+                subject_id: subjectId,
+                subject_name: selected_category?.name,
+                tag_id: new_note.tag_id ? parseInt(new_note.tag_id) : default_tag_id,
+                tag_name: new_note.tag_name
+            };
+            setter_notes(prev => [withSubject, ...prev]);
+        }
+    } catch (err) { console.error(err); }
+    finally { setter_creating_note(false); }
+};
+
+const handler_delete_note = async (noteId, e) => {
+    e.stopPropagation();
+    if (!window.confirm('Stergi notita?')) return;
+    setDeletingNoteId(noteId);
+    try {
+        const resp = await fetch(`http://localhost:5019/notes/${noteId}`, { method: "DELETE", credentials: "include" });
+        if (resp.ok) {
+            setter_notes(prev => prev.filter(n => (n.id ?? n.note_id) !== noteId));
+            if (current_note?.id === noteId) setCurrentNote(null);
+        }
+    } catch (err) { console.error(err); }
+    finally { setDeletingNoteId(null); }
+};
+const handler_delete_subject = async () => {
+    if (!window.confirm(`Stergi subiectul "${selected_category.name}" si toate notitele?`)) return;
+    try {
+        const resp = await fetch(`http://localhost:5019/subjects/${subjectId}`, { method: "DELETE", credentials: "include" });
+        if (resp.ok) {
+            setter_subjects(prev => prev.filter(s => (s.id ?? s.subject_id) !== subjectId));
+            setter_selected_categories(null);
+        }
+    } catch (err) { console.error(err); }
+}
+
+useEffect(() => {
+    if (!current_note?.id) return;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+
+    saveTimer.current = setTimeout(async () => {
+        if (lastSavedState.current &&
+            current_note.title === lastSavedState.current.title &&
+            current_note.description === lastSavedState.current.description &&
+            current_note.markdown_content === lastSavedState.current.markdown_content &&
+            current_note.course_date === lastSavedState.current.course_date &&
+            current_note.tag_id === lastSavedState.current.tag_id
+        ) { return; }
+
+        try {
+            const resp = await fetch(`http://localhost:5019/notes/${current_note.id}`, {
+                method: 'PUT',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    title: 'New Note',
+                    title: current_note.title,
+                    description: current_note.description || '',
+                    content: current_note.markdown_content,
+                    course_date: current_note.course_date,
                     subject_id: subjectId,
-                    description: '',
-                    markdown_content: '',
-                    tag_id: default_tag_id
+                    tag_id: current_note.tag_id || null
                 })
             });
 
             if (resp.ok) {
-                const new_note = await resp.json();
-                const withSubject = {
-                    ...new_note,
-                    subject_id: subjectId,
-                    subject_name: selected_category?.name,
-                    tag_id: new_note.tag_id ? parseInt(new_note.tag_id) : default_tag_id,
-                    tag_name: new_note.tag_name
-                };
-                setter_notes(prev => [withSubject, ...prev]);
-            }
-        } catch (err) { console.error(err); }
-        finally { setter_creating_note(false); }
-    };
-
-    const handler_delete_note = async (noteId, e) => {
-        e.stopPropagation();
-        if (!window.confirm('Stergi notita?')) return;
-        setDeletingNoteId(noteId);
-        try {
-            const resp = await fetch(`http://localhost:5019/notes/${noteId}`, { method: "DELETE", credentials: "include" });
-            if (resp.ok) {
-                setter_notes(prev => prev.filter(n => (n.id ?? n.note_id) !== noteId));
-                if (current_note?.id === noteId) setCurrentNote(null);
-            }
-        } catch (err) { console.error(err); }
-        finally { setDeletingNoteId(null); }
-    };
-    const handler_delete_subject = async () => {
-        if (!window.confirm(`Stergi subiectul "${selected_category.name}" si toate notitele?`)) return;
-        try {
-            const resp = await fetch(`http://localhost:5019/subjects/${subjectId}`, { method: "DELETE", credentials: "include" });
-            if (resp.ok) {
-                setter_subjects(prev => prev.filter(s => (s.id ?? s.subject_id) !== subjectId));
-                setter_selected_categories(null);
-            }
-        } catch (err) { console.error(err); }
-    }
-
-    useEffect(() => {
-        if (!current_note?.id) return;
-        if (saveTimer.current) clearTimeout(saveTimer.current);
-
-        saveTimer.current = setTimeout(async () => {
-            if (lastSavedState.current &&
-                current_note.title === lastSavedState.current.title &&
-                current_note.description === lastSavedState.current.description &&
-                current_note.markdown_content === lastSavedState.current.markdown_content &&
-                current_note.course_date === lastSavedState.current.course_date &&
-                current_note.tag_id === lastSavedState.current.tag_id
-            ) { return; }
-
-            try {
-                const resp = await fetch(`http://localhost:5019/notes/${current_note.id}`, {
-                    method: 'PUT',
-                    credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        title: current_note.title,
-                        description: current_note.description || '',
-                        content: current_note.markdown_content,
-                        course_date: current_note.course_date,
-                        subject_id: subjectId,
-                        tag_id: current_note.tag_id || null
-                    })
-                });
-
-                if (resp.ok) {
-                    const updated = await resp.json();
-                    let tagName = updated.tag_name;
+                const updated = await resp.json();
+                let tagName = updated.tag_name;
 
 
-                    if (!tagName && updated.tag_id) {
-                        if (updated.tag_id === 1) tagName = "Course";
-                        else if (updated.tag_id === 2) tagName = "Seminar";
-                        else if (updated.tag_id === 3) tagName = "Other";
-                    }
-
-                    const merged = {
-                        ...current_note,
-                        ...updated,
-                        tag_id: updated.tag_id ? parseInt(updated.tag_id) : null,
-                        tag_name: tagName
-                    };
-
-                    lastSavedState.current = merged;
-                    setter_notes(prev => prev.map(n => {
-                        const nid = n.id ?? n.note_id;
-                        const cid = merged.id ?? merged.note_id;
-                        if (nid === cid) {
-                            return { ...n, ...merged };
-                        }
-                        return n;
-                    }));
+                if (!tagName && updated.tag_id) {
+                    if (updated.tag_id === 1) tagName = "Course";
+                    else if (updated.tag_id === 2) tagName = "Seminar";
+                    else if (updated.tag_id === 3) tagName = "Other";
                 }
-            } catch (e) { console.error('Autosave error', e); }
-        }, 800);
 
-        return () => clearTimeout(saveTimer.current);
-    }, [current_note]);
+                const merged = {
+                    ...current_note,
+                    ...updated,
+                    tag_id: updated.tag_id ? parseInt(updated.tag_id) : null,
+                    tag_name: tagName
+                };
+
+                lastSavedState.current = merged;
+                setter_notes(prev => prev.map(n => {
+                    const nid = n.id ?? n.note_id;
+                    const cid = merged.id ?? merged.note_id;
+                    if (nid === cid) {
+                        return { ...n, ...merged };
+                    }
+                    return n;
+                }));
+            }
+        } catch (e) { console.error('Autosave error', e); }
+    }, 800);
+
+    return () => clearTimeout(saveTimer.current);
+}, [current_note]);
 
 
-    //edit_view
-    //edit_view
-    if (current_note) {
-        return (
-            <div className="flex-1 p-4 lg:p-6 overflow-auto h-full flex flex-col">
-                <button onClick={() => setCurrentNote(null)} className="mb-4 w-fit px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded flex items-center gap-1">
-                    ← Back to List
-                </button>
-
-                <div className="bg-white rounded-lg shadow-sm border p-4 lg:p-6 space-y-4 lg:space-y-6 flex-1 flex flex-col">
-                    {/* Header: Title + Tag */}
-                    <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 lg:items-end">
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                            <input
-                                type="text"
-                                value={current_note.title || ''}
-                                onChange={(e) => setCurrentNote(prev => ({ ...prev, title: e.target.value }))}
-                                className="w-full text-xl lg:text-2xl font-bold border-b-2 border-gray-200 focus:border-[#4E8DC4] outline-none pb-2"
-                                placeholder="Note title..."
-                            />
-                        </div>
-
-                        {/* Selector Tag */}
-                        <div className="w-full lg:w-1/4 lg:min-w-[150px]">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Tag</label>
-                            <select
-                                value={current_note.tag_id || ""}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    setCurrentNote(prev => ({
-                                        ...prev,
-                                        tag_id: val === "" ? null : parseInt(val)
-                                    }));
-                                }}
-                                className="w-full text-lg border-b-2 border-gray-200 pb-2 bg-transparent focus:border-[#4E8DC4] outline-none cursor-pointer"
-                            >
-                                <option value="">-- Select --</option>
-                                <option value="1">Course</option>
-                                <option value="2">Seminar</option>
-                                <option value="3">Other</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Metadata: Description + Date (AICI ERA GREȘEALA) */}
-                    <div className="flex flex-col lg:flex-row gap-4">
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                            <input
-                                type="text"
-                                value={current_note.description || ''}
-                                onChange={(e) => setCurrentNote(prev => ({ ...prev, description: e.target.value }))}
-                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#4E8DC4] outline-none"
-                                placeholder="Short description..."
-                            />
-                        </div>
-                        <div className="w-full lg:w-48">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Course Date</label>
-                            <input
-                                type="date"
-                                value={current_note.course_date || ''}
-                                onChange={(e) => setCurrentNote(prev => ({ ...prev, course_date: e.target.value }))}
-                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#4E8DC4] outline-none"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Content: Editor + Preview */}
-                    <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-[500px]">
-                        {/* Text Area */}
-                        <textarea
-                            value={current_note.markdown_content || ''}
-                            onChange={(e) => setCurrentNote(prev => ({ ...prev, markdown_content: e.target.value }))}
-                            className="w-full lg:w-1/2 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#4E8DC4] outline-none font-mono text-sm h-[300px] lg:h-auto resize-none"
-                            placeholder={tagPlaceholders[current_note.tag_id] || "Start typing..."}
-                        />
-
-                        {/* Preview Area */}
-                        <div className="w-full lg:w-1/2 p-4 border rounded-lg bg-gray-50 overflow-auto h-[300px] lg:h-auto prose prose-sm max-w-none">
-                            <ReactMarkdown>
-                                {(current_note.markdown_content || "Live preview...").replace(/\r\n/g, '\n')}
-                            </ReactMarkdown>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        );
-    }
-    //list_notes_view
+//edit_view
+//edit_view
+if (current_note) {
     return (
         <div className="flex-1 p-4 lg:p-6 overflow-auto h-full flex flex-col">
+            <button onClick={() => setCurrentNote(null)} className="mb-4 w-fit px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded flex items-center gap-1">
+                ← Back to List
+            </button>
 
-
-            <div className="mb-6 flex flex-col lg:flex-row lg:items-end justify-between gap-4 border-b pb-4">
-
-
-                <div className="w-full lg:w-auto">
-                    <div className="flex items-center gap-3 mb-1">
-                        {/* Icon */}
-                        <svg className="w-8 h-8 text-[#4E8DC4] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                        </svg>
-
-                        {/* Titlu */}
-                        <h2 className="text-xl font-bold text-gray-800 break-all">{selected_category?.name}</h2>
-
-
-                        <button
-                            onClick={handler_delete_subject}
-                            className="text-red-500 hover:bg-red-50 p-1 rounded ml-2 transition-colors shrink-0 z-10"
-                            title="Delete Subject"
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                        </button>
+            <div className="bg-white rounded-lg shadow-sm border p-4 lg:p-6 space-y-4 lg:space-y-6 flex-1 flex flex-col">
+                {/* Header: Title + Tag */}
+                <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 lg:items-end">
+                    <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                        <input
+                            type="text"
+                            value={current_note.title || ''}
+                            onChange={(e) => setCurrentNote(prev => ({ ...prev, title: e.target.value }))}
+                            className="w-full text-xl lg:text-2xl font-bold border-b-2 border-gray-200 focus:border-[#4E8DC4] outline-none pb-2"
+                            placeholder="Note title..."
+                        />
                     </div>
-                    {/* Counter Note */}
-                    <p className="text-gray-500 text-sm ml-11">{visible_notes.length} notes</p>
+
+                    {/* Selector Tag */}
+                    <div className="w-full lg:w-1/4 lg:min-w-[150px]">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Tag</label>
+                        <select
+                            value={current_note.tag_id || ""}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setCurrentNote(prev => ({
+                                    ...prev,
+                                    tag_id: val === "" ? null : parseInt(val)
+                                }));
+                            }}
+                            className="w-full text-lg border-b-2 border-gray-200 pb-2 bg-transparent focus:border-[#4E8DC4] outline-none cursor-pointer"
+                        >
+                            <option value="">-- Select --</option>
+                            <option value="1">Course</option>
+                            <option value="2">Seminar</option>
+                            <option value="3">Other</option>
+                        </select>
+                    </div>
                 </div>
 
+                {/* Metadata: Description + Date (AICI ERA GREȘEALA) */}
+                <div className="flex flex-col lg:flex-row gap-4">
+                    <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <input
+                            type="text"
+                            value={current_note.description || ''}
+                            onChange={(e) => setCurrentNote(prev => ({ ...prev, description: e.target.value }))}
+                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#4E8DC4] outline-none"
+                            placeholder="Short description..."
+                        />
+                    </div>
+                    <div className="w-full lg:w-48">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Course Date</label>
+                        <input
+                            type="date"
+                            value={current_note.course_date || ''}
+                            onChange={(e) => setCurrentNote(prev => ({ ...prev, course_date: e.target.value }))}
+                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#4E8DC4] outline-none"
+                        />
+                    </div>
+                </div>
 
-                <div className="flex flex-wrap gap-2 select-none">
-                    {[
-                        { id: 1, name: 'Course', color: 'text-blue-700' },
-                        { id: 2, name: 'Seminar', color: 'text-blue-700' },
-                        { id: 3, name: 'Other', color: 'text-blue-700' }
-                    ].map(opt => (
-                        <label
-                            key={opt.id}
-                            className={`
+                {/* Content: Toggle + Editor + Attachments */}
+                <div className="flex flex-col flex-1 min-h-[500px]">
+
+                    {/* 1. Toggle Buttons */}
+                    <div className="flex justify-end gap-2 mb-2">
+                        <button
+                            onClick={() => setViewMode('edit')}
+                            className={`px-3 py-1 rounded text-sm font-semibold transition-colors ${viewMode === 'edit' ? 'bg-[#4E8DC4] text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                        >
+                            Edit
+                        </button>
+                        <button
+                            onClick={() => setViewMode('preview')}
+                            className={`px-3 py-1 rounded text-sm font-semibold transition-colors ${viewMode === 'preview' ? 'bg-[#4E8DC4] text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                        >
+                            Preview
+                        </button>
+                    </div>
+                    {/* 2. Editor / Preview Area */}
+                    <div className="flex-1 border rounded-lg bg-gray-50 overflow-auto p-4 relative min-h-[400px]">
+                        {viewMode === 'edit' ? (
+                            <textarea
+                                value={current_note.markdown_content || ''}
+                                onChange={(e) => setCurrentNote(prev => ({ ...prev, markdown_content: e.target.value }))}
+                                className="w-full h-full bg-transparent outline-none font-mono text-sm resize-none"
+                                placeholder={tagPlaceholders[current_note.tag_id] || "Start typing markdown..."}
+                            />
+                        ) : (
+                            <div className="prose prose-sm max-w-none">
+                                <ReactMarkdown>
+                                    {(current_note.markdown_content || "").replace(/\r\n/g, '\n')}
+                                </ReactMarkdown>
+                            </div>
+                        )}
+                    </div>
+                    {/* 3. Attachments Section */}
+                    <div className="mt-6 border-t pt-4">
+                        <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                            Attachments
+                        </h3>
+
+                        <div className="flex flex-wrap gap-4 mb-4">
+                            {attachments.map((att, idx) => (
+                                <div key={att.id || idx} className="relative group border rounded-lg p-2 w-36 bg-white hover:shadow-md transition">
+                                    {/* Thumbnail Logic */}
+                                    {att.file_type && att.file_type.startsWith('image/') ? (
+                                        <div className="h-24 bg-gray-100 rounded mb-2 overflow-hidden flex items-center justify-center">
+                                            <img src={att.file_url} alt="attachment" className="w-full h-full object-cover" />
+                                        </div>
+                                    ) : (
+                                        <div className="h-24 bg-gray-100 rounded mb-2 flex flex-col items-center justify-center text-gray-400">
+                                            <svg className="w-8 h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                            <span className="text-xs uppercase font-bold">{att.file_type ? att.file_type.split('/')[1] : 'FILE'}</span>
+                                        </div>
+                                    )}
+
+                                    {/* Copy Link Overlay */}
+                                    <button
+                                        onClick={() => navigator.clipboard.writeText(`![Image](${att.file_url})`)}
+                                        className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition backdrop-blur-sm"
+                                        title="Copy Markdown Embedding"
+                                    >
+                                        Copy Link
+                                    </button>
+
+                                    <a href={att.file_url} target="_blank" rel="noopener noreferrer" className="block text-xs font-medium text-blue-600 truncate text-center hover:underline mt-1">
+                                        {att.file_url.split('/').pop()}
+                                    </a>
+                                </div>
+                            ))}
+                        </div>
+                        <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-white border border-[#4E8DC4] text-[#4E8DC4] hover:bg-[#4E8DC4] hover:text-white rounded-lg transition font-medium text-sm shadow-sm group">
+                            <svg className="w-4 h-4 transition-transform group-hover:-translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                            <span>Upload File</span>
+                            <input type="file" className="hidden" onChange={handler_upload_file} />
+                        </label>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    );
+}
+//list_notes_view
+return (
+    <div className="flex-1 p-4 lg:p-6 overflow-auto h-full flex flex-col">
+
+
+        <div className="mb-6 flex flex-col lg:flex-row lg:items-end justify-between gap-4 border-b pb-4">
+
+
+            <div className="w-full lg:w-auto">
+                <div className="flex items-center gap-3 mb-1">
+                    {/* Icon */}
+                    <svg className="w-8 h-8 text-[#4E8DC4] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
+
+                    {/* Titlu */}
+                    <h2 className="text-xl font-bold text-gray-800 break-all">{selected_category?.name}</h2>
+
+
+                  
+                </div>
+                {/* Counter Note */}
+                <p className="text-gray-500 text-sm ml-11">{visible_notes.length} notes</p>
+            </div>
+
+
+            <div className="flex flex-wrap gap-2 select-none">
+                {[
+                    { id: 1, name: 'Course' },
+                    { id: 2, name: 'Seminar' },
+                    { id: 3, name: 'Other'}
+                ].map(opt => (
+                    <label
+                        key={opt.id}
+                        className={`
                                 flex items-center gap-2 cursor-pointer 
                                 bg-blue-50 hover:bg-blue-100 
                                 px-4 py-2 rounded-full 
                                 border border-blue-200 hover:border-blue-300 
                                 transition-all shadow-sm
                             `}
-                        >
-                            <input
-                                type="checkbox"
-                                checked={tag_filters[opt.id]}
-                                onChange={() => setter_tag_filters(prev => ({ ...prev, [opt.id]: !prev[opt.id] }))}
-                                className="rounded text-[#4E8DC4] focus:ring-[#4E8DC4] w-4 h-4"
-                            />
-                            <span className={`text-sm font-semibold ${opt.color}`}>
-                                {opt.name}
-                            </span>
-                        </label>
-                    ))}
-                </div>
+                    >
+                        <input
+                            type="checkbox"
+                            checked={tag_filters[opt.id]}
+                            onChange={() => setter_tag_filters(prev => ({ ...prev, [opt.id]: !prev[opt.id] }))}
+                            className="rounded text-[#4E8DC4] focus:ring-[#4E8DC4] w-4 h-4"
+                        />
+                        <span className={`text-sm font-semibold ${opt.color}`}>
+                            {opt.name}
+                        </span>
+                    </label>
+                ))}
             </div>
+        </div>
 
-            {/* Buton New Note */}
-            <button
-                onClick={handler_create_note}
-                disabled={creating_note}
-                className="mb-6 w-full py-2 bg-[#4E8DC4] text-white rounded-lg hover:bg-[#3b78a2] transition flex justify-center gap-2 items-center shadow-md"
-            >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                {creating_note ? "Creating..." : "New Note"}
-            </button>
+        {/* Buton New Note */}
+        <button
+            onClick={handler_create_note}
+            disabled={creating_note}
+            className="mb-6 w-full py-2 bg-[#4E8DC4] text-white rounded-lg hover:bg-[#3b78a2] transition flex justify-center gap-2 items-center shadow-md"
+        >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+            {creating_note ? "Creating..." : "New Note"}
+        </button>
 
-            {/* Lista Notite */}
-            {loading ? <p className="text-center text-gray-500 mt-10">Loading notes...</p> : (
-                <ul className="space-y-3 pb-10">
-                    {visible_notes.map(note => {
-                        const noteId = note.id ?? note.note_id;
-                        return (
-                            <li key={noteId} onClick={() => handler_note_click(note)} className="bg-white p-4 rounded-lg shadow-sm border hover:border-[#4E8DC4] cursor-pointer group transition-all">
-                                <div className="flex justify-between items-start mb-2">
-                                    <div className="flex-1 overflow-hidden">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <svg className="w-5 h-5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                            </svg>
-                                            <h3 className="font-semibold text-gray-800 line-clamp-1">{note.title || 'Untitled'}</h3>
-                                        </div>
-                                        {note.description && <p className="text-sm text-gray-500 line-clamp-1 ml-7">{note.description}</p>}
+        {/* Lista Notite */}
+        {loading ? <p className="text-center text-gray-500 mt-10">Loading notes...</p> : (
+            <ul className="space-y-3 pb-10">
+                {visible_notes.map(note => {
+                    const noteId = note.id ?? note.note_id;
+                    return (
+                        <li key={noteId} onClick={() => handler_note_click(note)} className="bg-white p-4 rounded-lg shadow-sm border hover:border-[#4E8DC4] cursor-pointer group transition-all">
+                            <div className="flex justify-between items-start mb-2">
+                                <div className="flex-1 overflow-hidden">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <svg className="w-5 h-5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <h3 className="font-semibold text-gray-800 line-clamp-1">{note.title || 'Untitled'}</h3>
                                     </div>
-
-                                    <button onClick={(e) => handler_delete_note(noteId, e)} className="text-red-500 hover:bg-red-50 p-1 rounded ml-2 transition-colors shrink-0 z-10">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                    </button>
+                                    {note.description && <p className="text-sm text-gray-500 line-clamp-1 ml-7">{note.description}</p>}
                                 </div>
 
-                                <div className="mt-2 pt-2 border-t flex items-center justify-between text-xs text-gray-500">
-                                    <div className="flex items-center gap-3">
-                                        {note.tag_name && (
-                                            <span className="bg-blue-100 text-[#4E8DC4] px-2 py-0.5 rounded-full border border-blue-200 font-medium">
-                                                {note.tag_name}
-                                            </span>
-                                        )}
-                                        <span className="flex items-center gap-1">
-                                            <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                            <span className={note.course_date ? "text-gray-700" : "italic text-gray-400"}>
-                                                {note.course_date || "No date"}
-                                            </span>
+                                <button onClick={(e) => handler_delete_note(noteId, e)} className="text-red-500 hover:bg-red-50 p-1 rounded ml-2 transition-colors shrink-0 z-10">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                            </div>
+
+                            <div className="mt-2 pt-2 border-t flex items-center justify-between text-xs text-gray-500">
+                                <div className="flex items-center gap-3">
+                                    {note.tag_name && (
+                                        <span className="bg-blue-100 text-[#4E8DC4] px-2 py-0.5 rounded-full border border-blue-200 font-medium">
+                                            {note.tag_name}
                                         </span>
-                                    </div>
-                                    <span className="text-gray-400">
-                                        {new Date(note.updated_at).toLocaleDateString()}
+                                    )}
+                                    <span className="flex items-center gap-1">
+                                        <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                        <span className={note.course_date ? "text-gray-700" : "italic text-gray-400"}>
+                                            {note.course_date || "No date"}
+                                        </span>
                                     </span>
                                 </div>
-                            </li>
-                        )
-                    })}
-                </ul>
-            )}
+                                <span className="text-gray-400">
+                                    {new Date(note.updated_at).toLocaleDateString()}
+                                </span>
+                            </div>
+                        </li>
+                    )
+                })}
+            </ul>
+        )}
 
-            {notes.length === 0 && !loading && (
-                <div className="flex flex-col items-center justify-center mt-20 opacity-60 select-none">
-                    <svg className="w-24 h-24 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <p className="text-lg font-medium text-gray-400">No notes in this subject yet</p>
-                    <p className="text-sm text-gray-300">Create a new note to get started</p>
-                </div>
-            )}
-        </div>
-    );
+        {notes.length === 0 && !loading && (
+            <div className="flex flex-col items-center justify-center mt-20 opacity-60 select-none">
+                <svg className="w-24 h-24 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p className="text-lg font-medium text-gray-400">No notes in this subject yet</p>
+                <p className="text-sm text-gray-300">Create a new note to get started</p>
+            </div>
+        )}
+    </div>
+);
 }

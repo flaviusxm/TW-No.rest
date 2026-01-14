@@ -3,6 +3,7 @@ const cors = require("cors");
 const database = require("./models");
 const session = require('express-session')
 const passport = require('passport');
+const path = require('path');
 const { require_auth } = require("./middleware/auth");
 const subject_routes = require('./routes/subjects');
 const note_routes = require('./routes/notes');
@@ -16,6 +17,7 @@ require("dotenv").config();
 //
 
 const app = express();
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 app.use(cors({
   origin: ['http://localhost:3000'],
   credentials: true

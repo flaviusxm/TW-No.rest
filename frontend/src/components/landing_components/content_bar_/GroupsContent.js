@@ -174,9 +174,9 @@ export default function GroupsContent({ selected_group }) {
                             value={current_note.tag_id || ""}
                             onChange={e => setCurrentNote({ ...current_note, tag_id: e.target.value ? parseInt(e.target.value) : null })}
                             className={`w-full text-lg border-b-2 pb-2 bg-transparent outline-none cursor-pointer font-semibold
-                                    ${current_note.tag_id == 1 ? 'text-blue-600 border-blue-200' : ''}
-                                    ${current_note.tag_id == 2 ? 'text-green-600 border-green-200' : ''}
-                                    ${current_note.tag_id == 3 ? 'text-gray-600 border-gray-200' : ''}
+                                    ${current_note.tag_id == 1 ? '' : ''}
+                                    ${current_note.tag_id == 2 ? '' : ''}
+                                    ${current_note.tag_id == 3 ? '' : ''}
                                 `}
                         >
                             <option value="">-- Select --</option>
@@ -277,16 +277,8 @@ export default function GroupsContent({ selected_group }) {
                                         <div className="flex items-center gap-3">
 
 
-                                            {displayTagName && (
-                                                <span className={`px-2 py-0.5 rounded-full border font-medium
-                                                    ${displayTagName === "Course" || parseInt(note.tag_id) === 1 ? 'bg-blue-100 text-blue-700 border-blue-200' : ''}
-                                                    ${displayTagName === "Seminar" || parseInt(note.tag_id) === 2 ? 'bg-green-100 text-green-700 border-green-200' : ''}
-                                                    ${displayTagName === "Other" || parseInt(note.tag_id) === 3 ? 'bg-gray-100 text-gray-600 border-gray-200' : ''}
-                                                `}>
-                                                    {displayTagName}
-                                                </span>
-                                            )}
-
+                                           
+                                            
                                             <span className="flex items-center gap-1">
                                                 {note.course_date ? (
                                                     <>

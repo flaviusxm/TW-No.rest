@@ -2,6 +2,7 @@ const database = require('../models');
 const Note = database.notes;
 const Subject = database.subjects;
 const Tag = database.tags;
+const Attachment = database.attachments;
 
 exports.create_note = async (req, resp) => {
     try {
@@ -206,6 +207,27 @@ exports.update_note = async (req, resp) => {
         return resp.status(400).json({ err: 'Eroare update notita: ' + err.message });
     }
 };
+
+exports.upload_attachment = async (req, resp) => {
+
+    try {
+        if (!req.file) { return resp.status(400).json({ err: 'Error file upload' }) }
+
+        const note_id = req.params.id;
+        const attachment_url = `http://localhost:5019/uploads/${req.file.filename}`;
+        const attachment = await Attachment.create({
+            note_id: note_id,
+            file_url: attachment_url,
+            file_type: req.file.mimetype,
+            uploaded_at: new Date()
+        })
+        resp.json(attachment);
+
+    } catch (err) {
+        console.error('Upload error', err);
+        resp.status(500).json({ err: err.message })
+    }
+}
 
 exports.delete_note = async (req, resp) => {
     try {
