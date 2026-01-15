@@ -1,4 +1,6 @@
 const database = require('../models');
+const fs = require('fs');
+const path = require('path');
 const Note = database.notes;
 const Subject = database.subjects;
 const Tag = database.tags;
@@ -114,6 +116,9 @@ exports.get_note_by_id = async (req, resp) => {
                     model: Tag,
                     through: { attributes: [] },
                     attributes: ['tag_id', 'name']
+                },
+                {
+                    model: Attachment
                 }
             ]
         });
@@ -140,6 +145,7 @@ exports.get_note_by_id = async (req, resp) => {
             course_date: note.course_date,
             created_at: note.created_at,
             updated_at: note.updated_at,
+            attachments: note.Attachments || [],
             is_markdown: true
         });
     } catch (err) {
@@ -226,6 +232,44 @@ exports.upload_attachment = async (req, resp) => {
     } catch (err) {
         console.error('Upload error', err);
         resp.status(500).json({ err: err.message })
+    }
+}
+
+
+exports.delete_attachment = async (req, resp) => {
+    try {
+        const attachmentId = req.params.attachmentId;
+        const attachment = await Attachment.findByPk(attachmentId);
+
+        if (!attachment) {
+            return resp.status(404).json({ err: 'Atasament inexistent.' });
+        }
+
+        // Optional: Check if user owns the note for this attachment
+        const note = await Note.findByPk(attachment.note_id);
+        if (!note || note.user_id !== req.user.user_id) {
+            return resp.status(403).json({ err: 'Nu ai dreptul sa stergi acest fisier.' });
+        }
+
+        // Delete file from system
+        if (attachment.file_url) {
+
+            const parts = attachment.file_url.split('/uploads/');
+            if (parts.length > 1) {
+                const filename = parts[1];
+                const filePath = path.join(__dirname, '..', 'uploads', filename);
+                if (fs.existsSync(filePath)) {
+                    try { fs.unlinkSync(filePath); } catch (e) { console.error("Error deleting file", e); }
+                }
+            }
+        }
+
+        await attachment.destroy();
+        resp.json({ message: 'Atasament sters.' });
+
+    } catch (err) {
+        console.error('Error delete attachment:', err);
+        resp.status(500).json({ err: err.message });
     }
 }
 
