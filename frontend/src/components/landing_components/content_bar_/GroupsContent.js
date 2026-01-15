@@ -14,6 +14,12 @@ export default function GroupsContent({ selected_group }) {
     // --- STATE MODALE ---
     const [showMemberModal, setShowMemberModal] = useState(false);
     const [showNoteModal, setShowNoteModal] = useState(false);
+    ///////////////
+    const [showLinkModal, setShowLinkModal] = useState(false);
+    const [newLinkUrl, setNewLinkUrl] = useState('');
+    const [newLinkName, setNewLinkName] = useState('');
+    const [groupLinks, setGroupLinks] = useState([]);
+    /////////////////
 
     // --- STATE SEARCH ---
     const [searchTerm, setSearchTerm] = useState('');
@@ -21,6 +27,8 @@ export default function GroupsContent({ selected_group }) {
     const [isSearching, setIsSearching] = useState(false);
     const [personalNotes, setPersonalNotes] = useState([]);
     const [loadingPersonalNotes, setLoadingPersonalNotes] = useState(false);
+
+    
 
     const groupId = selected_group?.id ?? selected_group?.group_id;
 
@@ -61,7 +69,32 @@ export default function GroupsContent({ selected_group }) {
         refreshGroupData();
         setCurrentNote(null);
     }, [groupId]);
+// <<<<<<<<<< 2. FUNCȚIILE PENTRU LINK-URI (SALVARE / STERGERE) >>>>>>>>>>
+const handler_open_link_modal = () => {
+    setNewLinkUrl('');
+    setNewLinkName('');
+    setShowLinkModal(true);
+};
 
+const handler_save_link = () => {
+    if (!newLinkUrl.trim()) {
+        alert("Te rog introdu un URL.");
+        return;
+    }
+    // Adaugam in lista (simulat)
+    const nameToUse = newLinkName.trim() || newLinkUrl;
+    setGroupLinks(prev => [...prev, { id: Date.now(), url: newLinkUrl, name: nameToUse }]);
+    
+    // Inchidem modala
+    setShowLinkModal(false);
+};
+
+const handler_delete_link = (id) => {
+    if(window.confirm("Ștergi acest link?")) {
+        setGroupLinks(prev => prev.filter(l => l.id !== id));
+    }
+};
+//
     // --- 2. NOTE ACTIONS ---
     const handler_note_click = async (note) => {
         try {
@@ -221,9 +254,6 @@ export default function GroupsContent({ selected_group }) {
                 <div className="flex gap-2 w-full sm:w-auto">
                     <button onClick={() => setShowMemberModal(true)} className="px-3 py-1.5  text-white rounded shadow bg-[#4E8DC4] text-white rounded-lg hover:bg-[#3b78a2] transition flex items-center gap-1">Add Members</button>
                     <button onClick={() => { setShowNoteModal(true); fetchPersonalNotes(); }} className="px-3 py-1.5 text-white rounded shadow bg-[#4E8DC4] text-white rounded-lg hover:bg-[#3b78a2] transition flex items-center gap-1">Add Notes</button>
-                    <button className="px-3 py-1.5 text-white rounded shadow bg-[#4E8DC4] rounded-lg hover:bg-[#3b78a2] transition flex items-center gap-1">
-        Add Link
-    </button>
                 </div>
             </div>
 
@@ -309,8 +339,45 @@ export default function GroupsContent({ selected_group }) {
                     </ul>
                 )
             )}
+{/* <<<<<<<<<< 3. SECȚIUNEA DE JOS (LISTA DE LINK-URI) >>>>>>>>>> */}
+<div className="mt-8 border-t pt-6 mb-20"> 
+                <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                    Group Links & Resources
+                </h3>
 
+                <ul className="space-y-1 mb-4">
+                    {groupLinks.length === 0 ? (
+                        <li className="text-gray-500 text-sm py-2 italic">No links added yet.</li>
+                    ) : (
+                        groupLinks.map((link) => (
+                            <li key={link.id} className="flex justify-between items-center px-3 py-2 rounded transition-colors hover:bg-blue-50 group border border-transparent hover:border-blue-100">
+                                <a href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 truncate flex-1 text-sm text-gray-700 hover:text-blue-600 font-medium">
+                                    <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                    <span className="truncate">{link.name}</span>
+                                </a>
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); handler_delete_link(link.id); }} 
+                                    className="text-red-500 hover:bg-red-50 p-1 rounded ml-2 transition-colors shrink-0" 
+                                    title="Remove link"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                            </li>
+                        ))
+                    )}
+                </ul>
 
+                {/* Butonul de deschidere Modal */}
+                <button 
+                    onClick={handler_open_link_modal} // Deschide modala
+                    className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-white border border-[#4E8DC4] text-[#4E8DC4] hover:bg-[#4E8DC4] hover:text-white rounded-lg transition font-medium text-sm shadow-sm group"
+                >
+                    <svg className="w-4 h-4 transition-transform group-hover:-translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                    <span>Add Link</span>
+                </button>
+            </div>
+            {/* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */}
             {showMemberModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"> 
                 <div className="bg-white p-6 rounded-xl w-full max-w-md relative shadow-xl border">  
@@ -344,6 +411,47 @@ export default function GroupsContent({ selected_group }) {
                     </div>
                 </div>
             )}
+
+{showLinkModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white p-6 rounded-xl w-full max-w-md relative shadow-xl border">
+                        <button onClick={() => setShowLinkModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">✕</button>
+                        
+                        <h3 className="font-bold mb-4 text-lg text-gray-800">Add New Link</h3>
+                        
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">URL (Link)</label>
+                                <input 
+                                    className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-[#4E8DC4] focus:border-[#4E8DC4] outline-none" 
+                                    placeholder="https://example.com" 
+                                    value={newLinkUrl} 
+                                    onChange={e => setNewLinkUrl(e.target.value)} 
+                                    autoFocus
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Name (Optional)</label>
+                                <input 
+                                    className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-[#4E8DC4] focus:border-[#4E8DC4] outline-none" 
+                                    placeholder="e.g. Course Materials PDF" 
+                                    value={newLinkName} 
+                                    onChange={e => setNewLinkName(e.target.value)} 
+                                />
+                            </div>
+
+                            <button 
+                                onClick={handler_save_link}
+                                className="w-full bg-[#4E8DC4] text-white py-2 rounded-lg hover:bg-[#3b78a2] transition font-semibold shadow-sm mt-2"
+                            >
+                                Save Link
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */}
         </div>
     );
 }
