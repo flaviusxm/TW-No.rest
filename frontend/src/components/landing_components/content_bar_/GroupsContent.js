@@ -8,6 +8,7 @@ export default function GroupsContent({ selected_group }) {
 
     // --- STATE EDITOR ---
     const [current_note, setCurrentNote] = useState(null);
+    const [attachments, setAttachments] = useState([]);
     const saveTimer = useRef(null);
     const lastSavedState = useRef(null);
 
@@ -28,7 +29,7 @@ export default function GroupsContent({ selected_group }) {
     const [personalNotes, setPersonalNotes] = useState([]);
     const [loadingPersonalNotes, setLoadingPersonalNotes] = useState(false);
 
-    
+
 
     const groupId = selected_group?.id ?? selected_group?.group_id;
 
@@ -68,33 +69,34 @@ export default function GroupsContent({ selected_group }) {
     useEffect(() => {
         refreshGroupData();
         setCurrentNote(null);
+        setAttachments([]);
     }, [groupId]);
-// <<<<<<<<<< 2. FUNCȚIILE PENTRU LINK-URI (SALVARE / STERGERE) >>>>>>>>>>
-const handler_open_link_modal = () => {
-    setNewLinkUrl('');
-    setNewLinkName('');
-    setShowLinkModal(true);
-};
+    // <<<<<<<<<< 2. FUNCȚIILE PENTRU LINK-URI (SALVARE / STERGERE) >>>>>>>>>>
+    const handler_open_link_modal = () => {
+        setNewLinkUrl('');
+        setNewLinkName('');
+        setShowLinkModal(true);
+    };
 
-const handler_save_link = () => {
-    if (!newLinkUrl.trim()) {
-        alert("Te rog introdu un URL.");
-        return;
-    }
-    // Adaugam in lista (simulat)
-    const nameToUse = newLinkName.trim() || newLinkUrl;
-    setGroupLinks(prev => [...prev, { id: Date.now(), url: newLinkUrl, name: nameToUse }]);
-    
-    // Inchidem modala
-    setShowLinkModal(false);
-};
+    const handler_save_link = () => {
+        if (!newLinkUrl.trim()) {
+            alert("Te rog introdu un URL.");
+            return;
+        }
+        // Adaugam in lista (simulat)
+        const nameToUse = newLinkName.trim() || newLinkUrl;
+        setGroupLinks(prev => [...prev, { id: Date.now(), url: newLinkUrl, name: nameToUse }]);
 
-const handler_delete_link = (id) => {
-    if(window.confirm("Ștergi acest link?")) {
-        setGroupLinks(prev => prev.filter(l => l.id !== id));
-    }
-};
-//
+        // Inchidem modala
+        setShowLinkModal(false);
+    };
+
+    const handler_delete_link = (id) => {
+        if (window.confirm("Ștergi acest link?")) {
+            setGroupLinks(prev => prev.filter(l => l.id !== id));
+        }
+    };
+    //
     // --- 2. NOTE ACTIONS ---
     const handler_note_click = async (note) => {
         try {
@@ -104,6 +106,7 @@ const handler_delete_link = (id) => {
                 const selected = await resp.json();
                 const tId = selected.tag_id ? parseInt(selected.tag_id) : null;
                 setCurrentNote({ ...selected, tag_id: tId });
+                setAttachments(selected.attachments || []);
                 lastSavedState.current = selected;
             }
         } catch (e) { console.error(e); }
@@ -235,6 +238,41 @@ const handler_delete_link = (id) => {
                         onChange={e => setCurrentNote({ ...current_note, markdown_content: e.target.value })}
                         placeholder={tagPlaceholders[current_note.tag_id] || "Start typing..."}
                     />
+
+                    {/* Attachments Section */}
+                    <div className="mt-4 border-t pt-4">
+                        <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                            Attachments
+                        </h3>
+
+                        <ul className="space-y-1">
+                            {attachments.length === 0 ? (
+                                <li className="text-gray-500 text-sm py-2 italic">No attachments yet</li>
+                            ) : (
+                                attachments.map((att, idx) => (
+                                    <li
+                                        key={att.id || idx}
+                                        className="flex justify-between items-center px-3 py-2 rounded transition-colors hover:bg-[#E3F0FF] group"
+                                    >
+                                        <a
+                                            href={att.file_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-2 truncate flex-1 text-sm text-gray-700 hover:text-blue-600 cursor-pointer"
+                                        >
+                                            <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                            </svg>
+                                            <span className="truncate">
+                                                {att.file_url ? att.file_url.split('/').pop().replace(/^\d+-/, '') : "Unnamed File"}
+                                            </span>
+                                        </a>
+                                    </li>
+                                ))
+                            )}
+                        </ul>
+                    </div>
                 </div>
             </div>
         );
@@ -310,8 +348,8 @@ const handler_delete_link = (id) => {
                                         <div className="flex items-center gap-3">
 
 
-                                           
-                                            
+
+
                                             <span className="flex items-center gap-1">
                                                 {note.course_date ? (
                                                     <>
@@ -339,8 +377,8 @@ const handler_delete_link = (id) => {
                     </ul>
                 )
             )}
-{/* <<<<<<<<<< 3. SECȚIUNEA DE JOS (LISTA DE LINK-URI) >>>>>>>>>> */}
-<div className="mt-8 border-t pt-6 mb-20"> 
+            {/* <<<<<<<<<< 3. SECȚIUNEA DE JOS (LISTA DE LINK-URI) >>>>>>>>>> */}
+            <div className="mt-8 border-t pt-6 mb-20">
                 <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
                     <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
                     Group Links & Resources
@@ -356,9 +394,9 @@ const handler_delete_link = (id) => {
                                     <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                                     <span className="truncate">{link.name}</span>
                                 </a>
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); handler_delete_link(link.id); }} 
-                                    className="text-red-500 hover:bg-red-50 p-1 rounded ml-2 transition-colors shrink-0" 
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handler_delete_link(link.id); }}
+                                    className="text-red-500 hover:bg-red-50 p-1 rounded ml-2 transition-colors shrink-0"
                                     title="Remove link"
                                 >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -369,7 +407,7 @@ const handler_delete_link = (id) => {
                 </ul>
 
                 {/* Butonul de deschidere Modal */}
-                <button 
+                <button
                     onClick={handler_open_link_modal} // Deschide modala
                     className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-white border border-[#4E8DC4] text-[#4E8DC4] hover:bg-[#4E8DC4] hover:text-white rounded-lg transition font-medium text-sm shadow-sm group"
                 >
@@ -379,8 +417,8 @@ const handler_delete_link = (id) => {
             </div>
             {/* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */}
             {showMemberModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"> 
-                <div className="bg-white p-6 rounded-xl w-full max-w-md relative shadow-xl border">  
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white p-6 rounded-xl w-full max-w-md relative shadow-xl border">
                         <button onClick={() => setShowMemberModal(false)} className="absolute top-4 right-4 text-gray-400">✕</button>
                         <h3 className="font-bold mb-4">Add Member</h3>
                         <input className="w-full border p-2 rounded mb-2" placeholder="Search..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
@@ -396,9 +434,9 @@ const handler_delete_link = (id) => {
                 </div>
             )}
             {showNoteModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"> 
-                <div className="bg-white p-6 rounded-xl w-full max-w-md relative shadow-xl border">     
-                           <button onClick={() => setShowNoteModal(false)} className="absolute top-4 right-4 text-gray-400">✕</button>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white p-6 rounded-xl w-full max-w-md relative shadow-xl border">
+                        <button onClick={() => setShowNoteModal(false)} className="absolute top-4 right-4 text-gray-400">✕</button>
                         <h3 className="font-bold mb-4">Share Note</h3>
                         <div className="max-h-60 overflow-auto">
                             {personalNotes.map(n => (
@@ -412,36 +450,36 @@ const handler_delete_link = (id) => {
                 </div>
             )}
 
-{showLinkModal && (
+            {showLinkModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                     <div className="bg-white p-6 rounded-xl w-full max-w-md relative shadow-xl border">
                         <button onClick={() => setShowLinkModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">✕</button>
-                        
+
                         <h3 className="font-bold mb-4 text-lg text-gray-800">Add New Link</h3>
-                        
+
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">URL (Link)</label>
-                                <input 
-                                    className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-[#4E8DC4] focus:border-[#4E8DC4] outline-none" 
-                                    placeholder="https://example.com" 
-                                    value={newLinkUrl} 
-                                    onChange={e => setNewLinkUrl(e.target.value)} 
+                                <input
+                                    className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-[#4E8DC4] focus:border-[#4E8DC4] outline-none"
+                                    placeholder="https://example.com"
+                                    value={newLinkUrl}
+                                    onChange={e => setNewLinkUrl(e.target.value)}
                                     autoFocus
                                 />
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Name (Optional)</label>
-                                <input 
-                                    className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-[#4E8DC4] focus:border-[#4E8DC4] outline-none" 
-                                    placeholder="e.g. Course Materials PDF" 
-                                    value={newLinkName} 
-                                    onChange={e => setNewLinkName(e.target.value)} 
+                                <input
+                                    className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-[#4E8DC4] focus:border-[#4E8DC4] outline-none"
+                                    placeholder="e.g. Course Materials PDF"
+                                    value={newLinkName}
+                                    onChange={e => setNewLinkName(e.target.value)}
                                 />
                             </div>
 
-                            <button 
+                            <button
                                 onClick={handler_save_link}
                                 className="w-full bg-[#4E8DC4] text-white py-2 rounded-lg hover:bg-[#3b78a2] transition font-semibold shadow-sm mt-2"
                             >
