@@ -221,6 +221,9 @@ export default function GroupsContent({ selected_group }) {
                 <div className="flex gap-2 w-full sm:w-auto">
                     <button onClick={() => setShowMemberModal(true)} className="px-3 py-1.5  text-white rounded shadow bg-[#4E8DC4] text-white rounded-lg hover:bg-[#3b78a2] transition flex items-center gap-1">Add Members</button>
                     <button onClick={() => { setShowNoteModal(true); fetchPersonalNotes(); }} className="px-3 py-1.5 text-white rounded shadow bg-[#4E8DC4] text-white rounded-lg hover:bg-[#3b78a2] transition flex items-center gap-1">Add Notes</button>
+                    <button className="px-3 py-1.5 text-white rounded shadow bg-[#4E8DC4] rounded-lg hover:bg-[#3b78a2] transition flex items-center gap-1">
+        Add Link
+    </button>
                 </div>
             </div>
 
@@ -309,8 +312,8 @@ export default function GroupsContent({ selected_group }) {
 
 
             {showMemberModal && (
-                <div className="fixed inset-0  z-50 flex items-center justify-center p-4">
-                    <div className=" p-6 rounded-xl w-full max-w-md relative">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"> 
+                <div className="bg-white p-6 rounded-xl w-full max-w-md relative shadow-xl border">  
                         <button onClick={() => setShowMemberModal(false)} className="absolute top-4 right-4 text-gray-400">✕</button>
                         <h3 className="font-bold mb-4">Add Member</h3>
                         <input className="w-full border p-2 rounded mb-2" placeholder="Search..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
@@ -326,9 +329,9 @@ export default function GroupsContent({ selected_group }) {
                 </div>
             )}
             {showNoteModal && (
-                <div className="fixed inset-0  z-50 flex items-center justify-center p-4">
-                    <div className=" p-6 rounded-xl w-full max-w-lg relative">
-                        <button onClick={() => setShowNoteModal(false)} className="absolute top-4 right-4 text-gray-400">✕</button>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"> 
+                <div className="bg-white p-6 rounded-xl w-full max-w-md relative shadow-xl border">     
+                           <button onClick={() => setShowNoteModal(false)} className="absolute top-4 right-4 text-gray-400">✕</button>
                         <h3 className="font-bold mb-4">Share Note</h3>
                         <div className="max-h-60 overflow-auto">
                             {personalNotes.map(n => (
